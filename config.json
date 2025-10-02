@@ -1,0 +1,18 @@
+{
+  "api": {
+    "port": 5001,
+    "host": "0.0.0.0",
+    "debug": true
+  },
+  "static": {
+    "port": 8000,
+    "host": "0.0.0.0"
+  },
+  "database": {
+    "connection_string": "mongodb+srv://mememe999user:xc6sPHlZ5HAcmu7B@cluster0.u8f5m8t.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+  },
+  "paths": {
+    "static_files": ".",
+    "templates": "templates"
+  }
+}
