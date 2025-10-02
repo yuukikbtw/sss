@@ -594,8 +594,9 @@ if __name__ == "__main__":
     print("           🎯 HABIT TRACKER - API BACKEND")
     print("="*70)
     print(f"\n⚙️  Режим:          {'DEBUG' if config['api']['debug'] else 'PRODUCTION'}")
-    print(f"🔌 API Server:     http://{config['api']['host']}:{config['api']['port']}")
-    print(f"📊 Health Check:   http://{config['api']['host']}:{config['api']['port']}/api/health")
+    port = int(os.environ.get("PORT", config["api"]["port"]))
+    print(f"🔌 API Server:     http://{config['api']['host']}:{port}")
+    print(f"📊 Health Check:   http://{config['api']['host']}:{port}/api/health")
     print(f"🗄️  База данных:    MongoDB Atlas")
     print(f"🔐 Сессии:         Flask Sessions (cookies)")
     print("\n" + "="*70)
@@ -607,6 +608,6 @@ if __name__ == "__main__":
     print("🚀 Запуск Flask сервера...\n")
     app.run(
         debug=config["api"]["debug"], 
-        port=config["api"]["port"],
+        port=port,
         host=config["api"]["host"]
     )
