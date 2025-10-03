@@ -384,15 +384,16 @@ def habit_stats_service(habit_id: str, kind: str):
     return s, 200
 
 # ---------- Flask App ----------
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.', static_url_path='')
 # ВАЖНО: для стабильности сессий используем один секрет, а не новый каждую перезагрузку.
 # Можно вынести в переменную окружения HABIT_SECRET, иначе fallback (НЕ для продакшена!)
 app.secret_key = os.environ.get("HABIT_SECRET", "dev-secret-change-me")
 
-# Настройки cookies для работы между портами (localhost:8000 -> localhost:5001)
+# Настройки cookies
+is_production = os.environ.get("RENDER") is not None  # Render устанавливает эту переменную
 app.config.update(
-    SESSION_COOKIE_SAMESITE="Lax",  # Если будешь открывать с file:// или с другого хоста – поставь 'None' и включи HTTPS
-    SESSION_COOKIE_SECURE=False,      # На локали без HTTPS False
+    SESSION_COOKIE_SAMESITE="None" if is_production else "Lax",
+    SESSION_COOKIE_SECURE=is_production,  # True на Render (HTTPS), False локально
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_NAME="habit_session"
 )
@@ -491,6 +492,15 @@ def require_auth():
     if not session.get('user_id'):
         return {"error": "Требуется авторизация"}, 401
     return None
+
+# Статические файлы (для фронтенда)
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+
+@app.route('/<path:path>')
+def static_files(path):
+    return app.send_static_file(path)
 
 @app.post("/api/register")
 def api_register():
