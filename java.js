@@ -1,4 +1,42 @@
-const API_BASE = 'http://localhost:5000/api';
+// Умная система определения API сервера
+let API_BASE = localStorage.getItem('api_base') || 'https://sss-vcq4.onrender.com/api';
+let isServerOnline = false;
+let serverCheckInterval = null;
+
+// Возможные адреса сервера (по приоритету)
+const POSSIBLE_API_URLS = [
+    'https://sss-vcq4.onrender.com/api',  // Облачный сервер - работает ВЕЗДЕ! (ПЕРВЫЙ = ПРИОРИТЕТ)
+    'http://localhost:5001/api',
+    'http://127.0.0.1:5001/api',
+    'http://192.168.0.105:5001/api'
+];
+
+// Функция обновления статуса подключения
+function updateConnectionStatus(online) {
+    isServerOnline = online;
+    const statusEl = document.getElementById('connectionStatus');
+    if (statusEl) {
+        statusEl.className = 'connection-status ' + (online ? 'online' : 'offline');
+        statusEl.innerHTML = online 
+            ? '<span class="status-icon">🟢</span><span class="status-text">Онлайн</span>'
+            : '<span class="status-icon">🔴</span><span class="status-text">Оффлайн</span>';
+    }
+    console.log(online ? '✅ Сервер онлайн' : '❌ Сервер оффлайн');
+}
+
+// Helper функция для API запросов с автоматической отправкой credentials
+async function apiFetch(url, options = {}) {
+    const defaultOptions = {
+        credentials: 'include',  // ВАЖНО: отправляем cookies с сессией!
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    };
+    
+    return fetch(url, { ...defaultOptions, ...options });
+}
+
 let habits = [];
 let categories = [];
 let selectedHabitId = null;
@@ -1186,9 +1224,8 @@ function switchAuthMode(mode) {
 
 async function login(email, password) {
     try {
-        const response = await fetch(`${API_BASE}/login`, {
+        const response = await apiFetch(`${API_BASE}/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
         
@@ -1225,9 +1262,8 @@ async function login(email, password) {
 async function register(username, email, password) {
     try {
         console.log('Отправляем запрос регистрации:', { username, email });
-        const response = await fetch(`${API_BASE}/register`, {
+        const response = await apiFetch(`${API_BASE}/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password })
         });
         
@@ -1251,7 +1287,7 @@ async function register(username, email, password) {
 
 async function logout() {
     try {
-        await fetch(`${API_BASE}/logout`, { method: 'POST' });
+        await apiFetch(`${API_BASE}/logout`, { method: 'POST' });
         currentUser = null;
         localStorage.removeItem('currentUser');
         
@@ -1269,7 +1305,26 @@ async function logout() {
 }
 
 async function checkAuth() {
-    // Сначала проверим localStorage
+    // Проверяем доступность сервера ВСЕГДА
+    try {
+        const response = await apiFetch(`${API_BASE}/me`);
+        // Если получили ЛЮБОЙ ответ (даже 401) - сервер онлайн!
+        updateConnectionStatus(true);
+        
+        if (response.ok) {
+            const data = await response.json();
+            currentUser = data.user;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            updateUIForLoggedInUser();
+            fetchHabits();
+            return;
+        }
+    } catch (error) {
+        // Сервер недоступен
+        updateConnectionStatus(false);
+    }
+    
+    // Если API не вернул пользователя, проверим localStorage
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
         try {
@@ -1282,21 +1337,8 @@ async function checkAuth() {
         }
     }
     
-    // Затем проверим API
-    try {
-        const response = await fetch(`${API_BASE}/me`);
-        if (response.ok) {
-            const data = await response.json();
-            currentUser = data.user;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            updateUIForLoggedInUser();
-            fetchHabits();
-        } else {
-            updateUIForLoggedOutUser();
-        }
-    } catch (error) {
-        updateUIForLoggedOutUser();
-    }
+    // Пользователь не авторизован
+    updateUIForLoggedOutUser();
 }
 
 function updateUIForLoggedInUser() {
@@ -1307,23 +1349,13 @@ function updateUIForLoggedInUser() {
 }
 
 function updateUIForLoggedOutUser() {
-    // Создаем тестового пользователя для демонстрации
-    if (!currentUser) {
-        currentUser = {
-            id: 'test-user',
-            username: 'Тестовый пользователь',
-            email: 'test@example.com'
-        };
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        updateUIForLoggedInUser();
-        return;
-    }
-    
+    // Показываем кнопки авторизации
     document.getElementById('authButtons').style.display = 'flex';
     document.getElementById('userInfo').style.display = 'none';
     document.getElementById('appButtons').style.display = 'none';
     
     // Очищаем данные
+    currentUser = null;
     habits = [];
     renderHabits();
 }
@@ -1331,7 +1363,7 @@ function updateUIForLoggedOutUser() {
 // API calls
 async function fetchHabits() {
     try {
-        const response = await fetch(`${API_BASE}/habits`);
+        const response = await apiFetch(`${API_BASE}/habits`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
@@ -1356,9 +1388,8 @@ async function fetchHabits() {
 
 async function createHabit(data) {
     try {
-        const response = await fetch(`${API_BASE}/habits`, {
+        const response = await apiFetch(`${API_BASE}/habits`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
         
