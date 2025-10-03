@@ -17,11 +17,12 @@ function updateConnectionStatus(online) {
     const statusEl = document.getElementById('connectionStatus');
     if (statusEl) {
         statusEl.className = 'connection-status ' + (online ? 'online' : 'offline');
+        const statusText = t(online ? 'online' : 'offline');
         statusEl.innerHTML = online 
-            ? '<span class="status-icon">🟢</span><span class="status-text">Онлайн</span>'
-            : '<span class="status-icon">🔴</span><span class="status-text">Оффлайн</span>';
+            ? `<span class="status-icon">🟢</span><span class="status-text">${statusText}</span>`
+            : `<span class="status-icon">🔴</span><span class="status-text">${statusText}</span>`;
     }
-    console.log(online ? '✅ Сервер онлайн' : '❌ Сервер оффлайн');
+    console.log(online ? '✅ ' + t('online') : '❌ ' + t('offline'));
 }
 
 // Helper функция для API запросов с автоматической отправкой credentials
@@ -42,19 +43,22 @@ let categories = [];
 let selectedHabitId = null;
 let currentUser = null;
 
-// Default categories
-const defaultCategories = [
-    { id: 'sport', name: 'Спорт', emoji: '🏃‍♂️', isDefault: true },
-    { id: 'health', name: 'Здоровье', emoji: '💊', isDefault: true },
-    { id: 'work', name: 'Работа', emoji: '💼', isDefault: true },
-    { id: 'study', name: 'Обучение', emoji: '📚', isDefault: true },
-    { id: 'home', name: 'Домашние дела', emoji: '🏠', isDefault: true },
-    { id: 'hobby', name: 'Хобби', emoji: '🎨', isDefault: true },
-    { id: 'social', name: 'Социальное', emoji: '👥', isDefault: true },
-    { id: 'finance', name: 'Финансы', emoji: '💰', isDefault: true },
-    { id: 'mindfulness', name: 'Осознанность', emoji: '🧘‍♂️', isDefault: true },
-    { id: 'creativity', name: 'Творчество', emoji: '✨', isDefault: true }
-];
+// Default categories (function to support translations)
+function getDefaultCategories() {
+    return [
+        { id: 'sport', name: t('sport'), emoji: '🏃‍♂️', isDefault: true },
+        { id: 'health', name: t('health'), emoji: '💊', isDefault: true },
+        { id: 'work', name: t('work'), emoji: '💼', isDefault: true },
+        { id: 'study', name: t('study'), emoji: '📚', isDefault: true },
+        { id: 'home', name: t('home'), emoji: '🏠', isDefault: true },
+        { id: 'hobby', name: t('hobby'), emoji: '🎨', isDefault: true },
+        { id: 'social', name: t('social'), emoji: '👥', isDefault: true },
+        { id: 'finance', name: t('finance'), emoji: '💰', isDefault: true },
+        { id: 'mindfulness', name: t('mindfulness'), emoji: '🧘‍♂️', isDefault: true },
+        { id: 'creativity', name: t('creativity'), emoji: '✨', isDefault: true }
+    ];
+}
+const defaultCategories = getDefaultCategories();
 
 // ==================== AWARDS SYSTEM ====================
 
@@ -83,19 +87,23 @@ const badges = {
     habitMaster: { id: 'habitMaster', name: 'Мастер привычек', emoji: '🧙‍♂️', description: 'Создать 25 привычек', type: 'collection' }
 };
 
-// User levels system
-const levels = [
-    { level: 1, name: 'Новичок', emoji: '🌱', minXP: 0, maxXP: 99, color: '#22c55e' },
-    { level: 2, name: 'Стажёр', emoji: '🌿', minXP: 100, maxXP: 249, color: '#16a34a' },
-    { level: 3, name: 'Практик', emoji: '🌳', minXP: 250, maxXP: 499, color: '#15803d' },
-    { level: 4, name: 'Специалист', emoji: '⭐', minXP: 500, maxXP: 999, color: '#eab308' },
-    { level: 5, name: 'Эксперт', emoji: '💎', minXP: 1000, maxXP: 1999, color: '#3b82f6' },
-    { level: 6, name: 'Мастер', emoji: '👑', minXP: 2000, maxXP: 3999, color: '#8b5cf6' },
-    { level: 7, name: 'Гуру', emoji: '🧙‍♂️', minXP: 4000, maxXP: 7999, color: '#ec4899' },
-    { level: 8, name: 'Легенда', emoji: '🏆', minXP: 8000, maxXP: 15999, color: '#f59e0b' },
-    { level: 9, name: 'Мифический', emoji: '🌟', minXP: 16000, maxXP: 31999, color: '#06b6d4' },
-    { level: 10, name: 'Божественный', emoji: '✨', minXP: 32000, maxXP: Infinity, color: '#d946ef' }
-];
+// User levels system (function to support translations)
+function getLevels() {
+    return [
+        { level: 1, name: t('beginner'), emoji: '🌱', minXP: 0, maxXP: 99, color: '#22c55e' },
+        { level: 2, name: t('trainee'), emoji: '🌿', minXP: 100, maxXP: 249, color: '#16a34a' },
+        { level: 3, name: t('practitioner'), emoji: '🌳', minXP: 250, maxXP: 499, color: '#15803d' },
+        { level: 4, name: t('specialist'), emoji: '⭐', minXP: 500, maxXP: 999, color: '#eab308' },
+        { level: 5, name: t('expert'), emoji: '💎', minXP: 1000, maxXP: 1999, color: '#3b82f6' },
+        { level: 6, name: t('master'), emoji: '👑', minXP: 2000, maxXP: 3999, color: '#8b5cf6' },
+        { level: 7, name: t('guru'), emoji: '🧙‍♂️', minXP: 4000, maxXP: 7999, color: '#ec4899' },
+        { level: 8, name: t('legend'), emoji: '🏆', minXP: 8000, maxXP: 15999, color: '#f59e0b' },
+        { level: 9, name: t('mythic'), emoji: '🌟', minXP: 16000, maxXP: 31999, color: '#06b6d4' },
+        { level: 10, name: t('divine'), emoji: '✨', minXP: 32000, maxXP: Infinity, color: '#d946ef' }
+    ];
+}
+let levels = getLevels();
+
 
 // User progress tracking
 let userProgress = {
@@ -163,12 +171,13 @@ function awardXP(amount) {
 
 // Get current level based on XP
 function getCurrentLevel() {
-    for (let i = levels.length - 1; i >= 0; i--) {
-        if (userProgress.xp >= levels[i].minXP) {
-            return levels[i];
+    const levelsArray = getLevels();
+    for (let i = levelsArray.length - 1; i >= 0; i--) {
+        if (userProgress.xp >= levelsArray[i].minXP) {
+            return levelsArray[i];
         }
     }
-    return levels[0];
+    return levelsArray[0];
 }
 
 // Check and award badges
@@ -255,7 +264,8 @@ function checkBadges(habit, completedTime) {
 // Update level display in UI
 function updateLevelDisplay() {
     const currentLevel = getCurrentLevel();
-    const nextLevel = levels.find(l => l.level === currentLevel.level + 1);
+    const levelsArray = getLevels();
+    const nextLevel = levelsArray.find(l => l.level === currentLevel.level + 1);
     
     // Update level info
     const levelElement = document.getElementById('userLevel');
@@ -263,7 +273,7 @@ function updateLevelDisplay() {
         levelElement.innerHTML = `
             <span class="level-emoji">${currentLevel.emoji}</span>
             <span class="level-name">${currentLevel.name}</span>
-            <span class="level-number">Lvl ${currentLevel.level}</span>
+            <span class="level-number">${t('lvl')} ${currentLevel.level}</span>
         `;
     }
     
@@ -371,7 +381,18 @@ function showXPNotification(xp) {
 function initCategories() {
     const stored = localStorage.getItem('habitCategories');
     if (stored) {
-        categories = JSON.parse(stored);
+        const loadedCategories = JSON.parse(stored);
+        // Оновлюємо назви дефолтних категорій з перекладами
+        categories = loadedCategories.map(cat => {
+            if (cat.isDefault) {
+                // Знаходимо відповідну дефолтну категорію з перекладами
+                const defaultCat = defaultCategories.find(dc => dc.id === cat.id);
+                if (defaultCat) {
+                    return { ...cat, name: defaultCat.name };
+                }
+            }
+            return cat;
+        });
     } else {
         categories = [...defaultCategories];
         saveCategories();
@@ -643,9 +664,9 @@ function selectReminderType(type, element) {
     
     // Обновляем значение в инпуте
     const titles = {
-        'none': '🔕 Без напоминаний',
-        'specific': '⏰ В определенное время',
-        'interval': '🔄 Через интервалы'
+        'none': `🔕 ${t('noReminders')}`,
+        'specific': `⏰ ${t('atSpecificTime')}`,
+        'interval': `🔄 ${t('atIntervals')}`
     };
     
     document.getElementById('reminderType').value = titles[type];
@@ -775,9 +796,9 @@ function toggleIntervalUnit() {
 
 function selectIntervalUnit(unit, element) {
     const units = {
-        'minutes': 'минут',
-        'hours': 'часов',
-        'days': 'дней'
+        'minutes': t('minute'),
+        'hours': t('hour'),
+        'days': t('day')
     };
     
     // Убираем выделение с других опций
@@ -983,9 +1004,9 @@ function selectEditReminderType(type, element) {
     element.classList.add('selected');
     
     const titles = {
-        'none': '🔕 Без напоминаний',
-        'specific': '⏰ В определенное время',
-        'interval': '🔄 Через интервалы'
+        'none': `🔕 ${t('noReminders')}`,
+        'specific': `⏰ ${t('atSpecificTime')}`,
+        'interval': `🔄 ${t('atIntervals')}`
     };
     
     document.getElementById('editReminderType').value = titles[type];
@@ -1110,9 +1131,9 @@ function toggleEditIntervalUnit() {
 
 function selectEditIntervalUnit(unit, element) {
     const units = {
-        'minutes': 'минут',
-        'hours': 'часов',
-        'days': 'дней'
+        'minutes': t('minute'),
+        'hours': t('hour'),
+        'days': t('day')
     };
     
     element.parentElement.querySelectorAll('.interval-option').forEach(el => el.classList.remove('selected'));
@@ -1148,10 +1169,10 @@ function renderCategoriesList() {
             <div class="category-name">
                 <span class="category-emoji">${cat.emoji}</span>
                 <span>${cat.name}</span>
-                ${cat.isDefault ? '<span style="font-size:0.7rem;color:var(--muted);">(по умолчанию)</span>' : ''}
+                ${cat.isDefault ? `<span style="font-size:0.7rem;color:var(--muted);">${t('defaultCategory')}</span>` : ''}
             </div>
             <div class="category-actions">
-                ${!cat.isDefault ? `<button class="icon-btn delete" onclick="deleteCategory('${cat.id}')" title="Удалить">🗑️</button>` : ''}
+                ${!cat.isDefault ? `<button class="icon-btn delete" onclick="deleteCategory('${cat.id}')" title="${t('delete')}">🗑️</button>` : ''}
             </div>
         </div>
     `).join('');
@@ -1346,6 +1367,7 @@ function updateUIForLoggedInUser() {
     document.getElementById('userInfo').style.display = 'flex';
     document.getElementById('appButtons').style.display = 'flex';
     document.getElementById('userName').textContent = currentUser.username;
+    updateProfileUI(); // Оновлюємо весь профіль включно з email
 }
 
 function updateUIForLoggedOutUser() {
@@ -1371,6 +1393,7 @@ async function fetchHabits() {
         habits = await response.json();
         console.log('Загружены привычки:', habits.map(h => ({ id: h.id, name: h.name })));
         renderHabits();
+        updateUserStats(); // Оновлюємо статистику після завантаження звичок
         
         // Setup reminders for all habits
         if (currentUser) {
@@ -1475,18 +1498,23 @@ async function createHabit(data) {
 
 async function updateHabit(habitId, data) {
     try {
-        const response = await fetch(`${API_BASE}/habits/${habitId}`, {
+        console.log('Оновлення звички:', habitId, 'з даними:', data);
+        
+        const response = await apiFetch(`${API_BASE}/habits/${habitId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
         
+        console.log('Відповідь сервера:', response.status);
+        
         if (response.ok) {
+            const updatedHabit = await response.json();
+            console.log('Оновлена звичка з сервера:', updatedHabit);
+            
             showSuccess('Привычка обновлена!');
             await fetchHabits();
             
             // Setup reminder for the updated habit
-            const updatedHabit = await response.json();
             clearHabitReminder(habitId);
             if (updatedHabit.reminder && updatedHabit.reminder.type !== 'none') {
                 setupHabitReminder(updatedHabit);
@@ -1505,6 +1533,7 @@ async function updateHabit(habitId, data) {
             closeAllDropdowns();
         } else {
             const error = await response.json();
+            console.error('Помилка оновлення:', error);
             showError(error.error || 'Ошибка обновления привычки');
         }
     } catch (error) {
@@ -1520,7 +1549,7 @@ async function deleteHabit(habitId) {
     if (!confirm('Удалить эту привычку?')) return;
     
     try {
-        const response = await fetch(`${API_BASE}/habits/${habitId}`, {
+        const response = await apiFetch(`${API_BASE}/habits/${habitId}`, {
             method: 'DELETE'
         });
         
@@ -1529,11 +1558,17 @@ async function deleteHabit(habitId) {
         if (response.ok) {
             showSuccess('Привычка удалена');
             clearHabitReminder(habitId); // Очищаем напоминания
-            await fetchHabits(); // Обновляем список привычек
+            
+            // Закрываем панель статистики если была открыта эта привычка
             if (selectedHabitId == habitId) {
                 selectedHabitId = null;
-                statsPanel.innerHTML = '<div class="empty-state"><h3>Выберите привычку</h3></div>';
+                const statsPanel = document.getElementById('statsPanel');
+                if (statsPanel) {
+                    statsPanel.innerHTML = '<div class="empty-state"><h3>Выберите привычку</h3></div>';
+                }
             }
+            
+            await fetchHabits(); // Обновляем список привычек
         } else {
             const errorData = await response.text();
             console.error('Ошибка удаления:', response.status, errorData);
@@ -1547,9 +1582,8 @@ async function deleteHabit(habitId) {
 
 async function toggleEntry(habitId, date, status) {
     try {
-        const response = await fetch(`${API_BASE}/habits/${habitId}/tick`, {
+        const response = await apiFetch(`${API_BASE}/habits/${habitId}/tick`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ date, status })
         });
         
@@ -1570,9 +1604,9 @@ async function loadStats(habitId) {
         console.log('Загрузка статистики для привычки:', habitId);
         
         const [weekResponse, monthResponse, habitResponse] = await Promise.all([
-            fetch(`${API_BASE}/habits/${habitId}/stats?range=week`),
-            fetch(`${API_BASE}/habits/${habitId}/stats?range=month`),
-            fetch(`${API_BASE}/habits/${habitId}`)
+            apiFetch(`${API_BASE}/habits/${habitId}/stats?range=week`),
+            apiFetch(`${API_BASE}/habits/${habitId}/stats?range=month`),
+            apiFetch(`${API_BASE}/habits/${habitId}`)
         ]);
         
         console.log('Ответы от сервера:', {
@@ -1586,6 +1620,9 @@ async function loadStats(habitId) {
         const habitData = habitResponse.ok ? await habitResponse.json() : null;
         
         console.log('Загруженные данные:', { weekStats, monthStats, habitData });
+        console.log('weekStats детально:', weekStats);
+        console.log('monthStats детально:', monthStats);
+        console.log('habitData детально:', habitData);
         
         renderStats(weekStats, monthStats, habitData);
     } catch (error) {
@@ -1605,8 +1642,8 @@ function renderHabits() {
     if (habits.length === 0) {
         habitsList.innerHTML = `
             <div class="empty-state">
-                <h3>Пока нет привычек</h3>
-                <p>Добавьте первую привычку</p>
+                <h3 data-i18n="noHabits">${t('noHabits')}</h3>
+                <p data-i18n="noHabitsDesc">${t('noHabitsDesc')}</p>
             </div>
         `;
         return;
@@ -1647,10 +1684,10 @@ function renderHabits() {
                 
                 <div class="week-section">
                     <div class="week-hint" style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; text-align: center;">
-                        Кликните на день, чтобы отметить выполнение
+                        ${t('clickDayToMark')}
                     </div>
                     <div class="week-grid">
-                        ${['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => 
+                        ${[t('monday'), t('tuesday'), t('wednesday'), t('thursday'), t('friday'), t('saturday'), t('sunday')].map(day => 
                             `<div class="day-label">${day}</div>`
                         ).join('')}
                         ${getWeekDays().map(date => {
@@ -1661,7 +1698,7 @@ function renderHabits() {
                                 <div class="day-cell ${isToday ? 'today' : ''}" 
                                          data-habit-id="${habit.id}" 
                                          data-date="${dateStr}"
-                                         title="Кликните, чтобы отметить выполнение"
+                                         title="${t('clickToMarkCompletion')}"
                                          style="cursor: pointer;">
                                     ${date.getDate()}
                                 </div>
@@ -1681,7 +1718,7 @@ async function updateWeekCells() {
     
     for (const habit of habits) {
         try {
-            const response = await fetch(`${API_BASE}/habits/${habit.id}/stats?range=week`);
+            const response = await apiFetch(`${API_BASE}/habits/${habit.id}/stats?range=week`);
             const stats = await response.json();
             
             if (stats.entries) {
@@ -1729,9 +1766,8 @@ async function toggleDay(habitId, date) {
         console.log('Текущее состояние:', isDone ? 'выполнено' : 'не выполнено', '-> новое:', newStatus === 1 ? 'выполнено' : 'не выполнено');
         
         // Отправляем запрос на сервер
-        const response = await fetch(`${API_BASE}/habits/${habitId}/tick`, {
+        const response = await apiFetch(`${API_BASE}/habits/${habitId}/tick`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date: date,
                 status: newStatus
@@ -1805,7 +1841,9 @@ async function toggleDay(habitId, date) {
             }
             
             // Обновляем статистику если эта привычка выбрана
-            if (selectedHabitId === habitId) {
+            console.log('Перевірка оновлення статистики:', { selectedHabitId, habitId, рівні: selectedHabitId == habitId });
+            if (selectedHabitId == habitId) {
+                console.log('Оновлюємо статистику для звички:', habitId);
                 setTimeout(() => loadStats(habitId), 500); // Небольшая задержка для обновления данных на сервере
             }
             
@@ -1822,47 +1860,54 @@ async function toggleDay(habitId, date) {
 }
 
 function renderStats(weekStats, monthStats, habitData) {
-    const streak = habitData.streak || { current: 0, max: 0 };
+    const streak = habitData?.streak || { current: 0, max: 0 };
+    
+    console.log('renderStats викликано з:', { weekStats, monthStats, habitData });
+    console.log('Streak:', streak);
     
     // Значения по умолчанию для статистики
+    // Используем данные из сервера напрямую
     const safeWeekStats = {
         completed_days: weekStats?.completed_days || 0,
-        total_days: weekStats?.total_days || 7,
+        total_days: weekStats?.total_days || 0,
         adherence_percent: weekStats?.adherence_percent || 0
     };
     
     const safeMonthStats = {
         completed_days: monthStats?.completed_days || 0,
-        total_days: monthStats?.total_days || 30,
+        total_days: monthStats?.total_days || 0,
         adherence_percent: monthStats?.adherence_percent || 0
     };
+    
+    console.log('safeWeekStats:', safeWeekStats);
+    console.log('safeMonthStats:', safeMonthStats);
     
     statsPanel.innerHTML = `
         <div class="streak-display">
             <span class="streak-number">${streak.current}</span>
-            <div class="streak-label">Текущая серия</div>
+            <div class="streak-label">${t('currentStreak')}</div>
         </div>
         
         <div class="stats-grid">
             <div class="stat-item">
-                <span class="stat-label">Неделя</span>
+                <span class="stat-label">${t('week')}</span>
                 <span class="stat-value">${safeWeekStats.completed_days}/${safeWeekStats.total_days}</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">Месяц</span>
+                <span class="stat-label">${t('month')}</span>
                 <span class="stat-value">${safeMonthStats.completed_days}/${safeMonthStats.total_days}</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">Неделя %</span>
+                <span class="stat-label">${t('weekPercent')}</span>
                 <span class="stat-value">${Math.round(safeWeekStats.adherence_percent)}%</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">Месяц %</span>
+                <span class="stat-label">${t('monthPercent')}</span>
                 <span class="stat-value">${Math.round(safeMonthStats.adherence_percent)}%</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">Лучшая серия</span>
-                <span class="stat-value">${streak.max} дней</span>
+                <span class="stat-label">${t('bestStreak')}</span>
+                <span class="stat-value">${streak.max} ${t('days')}</span>
             </div>
         </div>
     `;
@@ -1941,9 +1986,9 @@ function editHabit(habitId) {
             if (habit.reminder.interval) {
                 document.getElementById('editIntervalValue').value = habit.reminder.interval.value;
                 const units = {
-                    'minutes': 'минут',
-                    'hours': 'часов',
-                    'days': 'дней'
+                    'minutes': t('minute'),
+                    'hours': t('hour'),
+                    'days': t('day')
                 };
                 const unitInput = document.getElementById('editIntervalUnit');
                 unitInput.value = units[habit.reminder.interval.unit];
@@ -1951,7 +1996,7 @@ function editHabit(habitId) {
             }
         }
     } else {
-        reminderTypeInput.value = '🔕 Без напоминаний';
+        reminderTypeInput.value = `🔕 ${t('noReminders')}`;
         reminderTypeInput.dataset.value = 'none';
         specificSettings.style.display = 'none';
         intervalSettings.style.display = 'none';
@@ -2659,7 +2704,14 @@ function validateConfirmPasswordEdit() {
 
 // Update password strength indicator for edit form
 function updatePasswordStrengthEdit(password) {
-    updatePasswordStrength(password, 'newPasswordEdit');
+    if (!password) {
+        const strengthElement = document.getElementById('passwordStrength');
+        if (strengthElement) {
+            strengthElement.innerHTML = '';
+        }
+        return;
+    }
+    updatePasswordStrength(password);
 }
 
 // Initialize profile editing event listeners
@@ -2804,8 +2856,25 @@ function updateAvatarUI() {
 // Update user statistics
 function updateUserStats() {
     const totalHabits = habits.length;
-    const completedToday = 0; // TODO: Calculate from today's entries
-    const longestStreak = 0; // TODO: Calculate from habit streaks
+    
+    // Підраховуємо виконані сьогодні
+    const today = formatDate(new Date());
+    let completedToday = 0;
+    
+    habits.forEach(habit => {
+        // Перевіряємо чи є запис на сьогодні в entries
+        if (habit.entries && habit.entries.some(entry => entry.date === today && entry.status === 1)) {
+            completedToday++;
+        }
+    });
+    
+    // Знаходимо найдовшу серію серед усіх звичок
+    let longestStreak = 0;
+    habits.forEach(habit => {
+        if (habit.streak && habit.streak.max > longestStreak) {
+            longestStreak = habit.streak.max;
+        }
+    });
     
     document.getElementById('userHabitsCount').textContent = totalHabits;
     document.getElementById('totalHabits').textContent = totalHabits;
@@ -2957,6 +3026,8 @@ function toggleSetting(settingId) {
     const toggle = document.getElementById(settingId);
     const isActive = toggle.classList.contains('active');
     
+    console.log('Toggle setting:', settingId, 'Current active:', isActive);
+    
     if (isActive) {
         toggle.classList.remove('active');
         userSettings[settingId] = false;
@@ -2964,6 +3035,8 @@ function toggleSetting(settingId) {
         toggle.classList.add('active');
         userSettings[settingId] = true;
     }
+    
+    console.log('New value:', userSettings[settingId]);
     
     // Apply setting immediately
     applyUserSettings();
@@ -2974,11 +3047,17 @@ function toggleSetting(settingId) {
 
 // Apply user settings to UI
 function applyUserSettings() {
-    // Apply dark theme
+    console.log('Applying settings. darkTheme:', userSettings.darkTheme);
+    
+    // Apply theme
     if (userSettings.darkTheme) {
+        console.log('Setting dark theme');
+        document.body.classList.remove('light-theme');
         document.body.classList.add('dark-theme');
     } else {
+        console.log('Setting light theme');
         document.body.classList.remove('dark-theme');
+        document.body.classList.add('light-theme');
     }
     
     // Apply compact view
@@ -3551,6 +3630,10 @@ function checkPasswordStrength(password) {
 // Update password strength indicator
 function updatePasswordStrength(password) {
     const strengthElement = document.getElementById('passwordStrength');
+    
+    if (!strengthElement) {
+        return; // Елемент не існує, виходимо
+    }
     
     if (!password) {
         strengthElement.innerHTML = '';

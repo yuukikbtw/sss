@@ -1,22 +1,22 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Трекер привычек</title>
-<link rel="stylesheet" href="css.css">
+<title>🎯 Трекер звичок</title>
+<link rel="stylesheet" href="css.css?v=2">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#00d4ff">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎯 Трекер привычек</h1>
+            <h1 data-i18n="appTitle">🎯 Трекер звичок</h1>
             
-            <!-- Индикатор статуса подключения -->
+            <!-- Індикатор статусу підключення -->
             <div id="connectionStatus" class="connection-status offline">
                 <span class="status-icon">🔴</span>
-                <span class="status-text">Оффлайн</span>
+                <span class="status-text" data-i18n="offline"></span>
             </div>
             
             <div class="header-actions">
@@ -25,7 +25,7 @@
                         <span id="userAvatar">👤</span>
                     </div>
                     <div class="user-info-content">
-                        <div class="user-name" id="userName">Пользователь</div>
+                        <div class="user-name" id="userName" data-i18n="user">Користувач</div>
                         <div class="user-level" id="userLevel">
                             <span class="level-emoji">🌱</span>
                             <span class="level-name">Новичок</span>
@@ -54,60 +54,60 @@
                             <div class="profile-avatar-large">
                                 <span id="profileAvatarLarge">👤</span>
                             </div>
-                            <div class="profile-name" id="profileName">Пользователь</div>
+                            <div class="profile-name" id="profileName">Користувач</div>
                             <div class="profile-email" id="profileEmail">user@example.com</div>
                         </div>
                         
                         <div class="profile-stats-grid">
                             <div class="profile-stat-item">
                                 <span class="profile-stat-number" id="totalHabits">0</span>
-                                <span class="profile-stat-label">Привычки</span>
+                                <span class="profile-stat-label" data-i18n="myHabits">Звички</span>
                             </div>
                             <div class="profile-stat-item">
                                 <span class="profile-stat-number" id="completedToday">0</span>
-                                <span class="profile-stat-label">Сегодня</span>
+                                <span class="profile-stat-label" data-i18n="today">Сьогодні</span>
                             </div>
                             <div class="profile-stat-item">
                                 <span class="profile-stat-number" id="longestStreak">0</span>
-                                <span class="profile-stat-label">Рекорд</span>
+                                <span class="profile-stat-label" data-i18n="longestStreak">Рекорд</span>
                             </div>
                         </div>
                         
                         <div class="profile-menu">
                             <button class="profile-menu-item" onclick="openProfileSettings()">
                                 <span class="profile-menu-icon">⚙️</span>
-                                Настройки профиля
+                                <span data-i18n="profileSettings">Налаштування профілю</span>
                             </button>
                             <button class="profile-menu-item" onclick="openCategoriesModal()">
                                 <span class="profile-menu-icon">🏷️</span>
-                                Управление категориями
+                                <span data-i18n="manageCategoriesTitle">Управління категоріями</span>
                             </button>
                             <button class="profile-menu-item" onclick="exportData()">
                                 <span class="profile-menu-icon">📥</span>
-                                Экспорт данных
+                                <span data-i18n="exportData">Експорт даних</span>
                             </button>
                             <button class="profile-menu-item" onclick="importData()">
                                 <span class="profile-menu-icon">📤</span>
-                                Импорт данных
+                                <span data-i18n="importData">Імпорт даних</span>
                             </button>
                             <div style="height: 1px; background: var(--border-subtle); margin: 8px 0;"></div>
                             <button class="profile-menu-item danger" onclick="logout()">
                                 <span class="profile-menu-icon">🚪</span>
-                                Выйти из аккаунта
+                                <span data-i18n="logout">Вийти з акаунту</span>
                             </button>
                         </div>
                     </div>
                 </div>
                 <div id="authButtons">
-                    <button class="btn btn-secondary" onclick="openAuthModal('login')">Войти</button>
-                    <button class="btn" onclick="openAuthModal('register')">Регистрация</button>
+                    <button class="btn btn-secondary" onclick="openAuthModal('login')" data-i18n="login">Увійти</button>
+                    <button class="btn" onclick="openAuthModal('register')" data-i18n="register">Реєстрація</button>
                 </div>
                 <div id="appButtons" style="display: none;">
                     <button class="btn btn-secondary" onclick="openCategoriesModal()">
-                        🏷️ Категории
+                        <span data-i18n="categories">🏷️ Категорії</span>
                     </button>
                     <button class="btn" onclick="openAddHabitModal()">
-                        ➕ Добавить привычку
+                        <span data-i18n="addHabit">➕ Додати звичку</span>
                     </button>
                 </div>
             </div>
@@ -115,19 +115,19 @@
 
         <main>
             <section class="panel">
-                <h2>📋 Мои привычки</h2>
+                <h2 data-i18n="myHabits">📋 Мої звички</h2>
                 <div id="errorMessage"></div>
                 <div id="habitsList" class="habits-list">
-                    <div class="loading">Загрузка привычек...</div>
+                    <div class="loading" data-i18n="loadingHabits">Завантаження звичок...</div>
                 </div>
             </section>
 
             <aside class="panel">
-                <h2>📊 Статистика</h2>
+                <h2 data-i18n="statistics">📊 Статистика</h2>
                 <div id="statsPanel">
                     <div class="empty-state">
-                        <h3>Выберите привычку</h3>
-                        <p>Кликните на привычку слева, чтобы увидеть статистику</p>
+                        <h3 data-i18n="selectHabit">Оберіть звичку</h3>
+                        <p data-i18n="selectHabitDesc">Клікніть на звичку зліва, щоб побачити статистику</p>
                     </div>
                 </div>
             </aside>
@@ -138,91 +138,99 @@
     <div class="modal-overlay" id="addHabitModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">Добавить привычку</h3>
+                <h3 class="modal-title" data-i18n="addHabitTitle">Додати звичку</h3>
                 <button class="modal-close" onclick="closeModal('addHabitModal')">&times;</button>
             </div>
             
             <form id="addHabitForm">
                 <div class="form-group">
-                    <label class="form-label">Название привычки</label>
-                    <input type="text" class="form-input" id="habitName" placeholder="Например: Пить воду" required>
+                    <label class="form-label" data-i18n="habitName">Назва звички</label>
+                    <input type="text" class="form-input" id="habitName" data-i18n-placeholder="habitNamePlaceholder" placeholder="Наприклад: Пити воду" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Описание</label>
-                    <textarea class="form-textarea" id="habitDesc" placeholder="Краткое описание (опционально)"></textarea>
+                    <label class="form-label" data-i18n="description">Опис</label>
+                    <textarea class="form-textarea" id="habitDesc" data-i18n-placeholder="descriptionPlaceholder" placeholder="Короткий опис (опціонально)"></textarea>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Время</label>
+                    <label class="form-label" data-i18n="time">Час</label>
                     <div class="time-selector">
-                        <input type="text" class="form-input" id="habitTime" placeholder="Выберите время" readonly onclick="toggleTimeDropdown()">
+                        <input type="text" class="form-input" id="habitTime" data-i18n-placeholder="selectTime" placeholder="Оберіть час" readonly onclick="toggleTimeDropdown()">
                         <div class="time-dropdown" id="timeDropdown">
                             <div class="time-picker">
                                 <div class="time-column">
-                                    <div class="time-label">Час</div>
+                                    <div class="time-label" data-i18n="hours">Година</div>
                                     <div class="time-values" id="hourValues"></div>
                                 </div>
                                 <div class="time-separator">:</div>
                                 <div class="time-column">
-                                    <div class="time-label">Минуты</div>
+                                    <div class="time-label" data-i18n="minutes">Хвилини</div>
                                     <div class="time-values" id="minuteValues"></div>
                                 </div>
                             </div>
                             <div class="time-actions">
-                                <button type="button" class="btn btn-secondary" onclick="clearTime()">Очистить</button>
-                                <button type="button" class="btn" onclick="confirmTime()">Готово</button>
+                                <button type="button" class="btn btn-secondary" onclick="clearTime()">
+                                    <span data-i18n="clear">Очистити</span>
+                                </button>
+                                <button type="button" class="btn" onclick="confirmTime()">
+                                    <span data-i18n="done">Готово</span>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Напоминания</label>
+                    <label class="form-label" data-i18n="reminder">Нагадування</label>
                     <div class="reminder-selector">
-                        <input type="text" class="form-input" id="reminderType" placeholder="Выберите тип напоминания" readonly onclick="toggleReminderDropdown()">
+                        <input type="text" class="form-input" id="reminderType" data-i18n-placeholder="selectReminderType" placeholder="Оберіть тип нагадування" readonly onclick="toggleReminderDropdown()">
                         <div class="reminder-dropdown" id="reminderDropdown">
                             <div class="reminder-option" data-value="none">
                                 <div class="reminder-icon">🔕</div>
                                 <div class="reminder-info">
-                                    <div class="reminder-title">Без напоминаний</div>
-                                    <div class="reminder-desc">Отслеживание без уведомлений</div>
+                                    <div class="reminder-title" data-i18n="noReminders">Без нагадувань</div>
+                                    <div class="reminder-desc" data-i18n="noRemindersDesc">Відстеження без сповіщень</div>
                                 </div>
                             </div>
                             <div class="reminder-option" data-value="specific">
                                 <div class="reminder-icon">⏰</div>
                                 <div class="reminder-info">
-                                    <div class="reminder-title">В определенное время</div>
-                                    <div class="reminder-desc">Уведомление в выбранное время</div>
+                                    <div class="reminder-title" data-i18n="atSpecificTime">У певний час</div>
+                                    <div class="reminder-desc" data-i18n="atSpecificTimeDesc">Сповіщення у вибраний час</div>
                                 </div>
                             </div>
                             <div class="reminder-option" data-value="interval">
                                 <div class="reminder-icon">🔄</div>
                                 <div class="reminder-info">
-                                    <div class="reminder-title">Через интервалы</div>
-                                    <div class="reminder-desc">Повторяющиеся уведомления</div>
+                                    <div class="reminder-title" data-i18n="atIntervals">Через інтервали</div>
+                                    <div class="reminder-desc" data-i18n="atIntervalsDesc">Повторювані сповіщення</div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="reminder-settings" id="specificTimeSettings" style="display: none;">
                             <div class="reminder-time-selector">
-                                <input type="text" class="form-input" id="reminderTime" placeholder="Выберите время напоминания" readonly onclick="toggleReminderTimeDropdown()">
+                                <input type="text" class="form-input" id="reminderTime" data-i18n-placeholder="selectReminderTime" placeholder="Оберіть час нагадування" readonly onclick="toggleReminderTimeDropdown()">
                                 <div class="time-dropdown" id="reminderTimeDropdown">
                                     <div class="time-picker">
                                         <div class="time-column">
-                                            <div class="time-label">Час</div>
+                                            <div class="time-label" data-i18n="hours">Година</div>
                                             <div class="time-values" id="reminderHourValues"></div>
                                         </div>
                                         <div class="time-separator">:</div>
                                         <div class="time-column">
-                                            <div class="time-label">Минуты</div>
+                                            <div class="time-label" data-i18n="minutes">Хвилини</div>
                                             <div class="time-values" id="reminderMinuteValues"></div>
                                         </div>
                                     </div>
                                     <div class="time-actions">
-                                        <button type="button" class="btn btn-secondary" onclick="clearReminderTime()">Очистить</button>
-                                        <button type="button" class="btn" onclick="confirmReminderTime()">Готово</button>
+                                        <button type="button" class="btn btn-secondary" onclick="clearReminderTime()">
+                                            <span data-i18n="clear">Очистити</span>
+                                        </button>
+                                        <button type="button" class="btn" onclick="confirmReminderTime()">
+                                            <span data-i18n="done">Готово</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -231,15 +239,15 @@
                         <div class="reminder-settings" id="intervalSettings" style="display: none;">
                             <div class="interval-selector">
                                 <div class="interval-input-group">
-                                    <label class="form-label">Каждые</label>
+                                    <label class="form-label" data-i18n="every">Кожні</label>
                                     <div class="interval-controls">
                                         <input type="number" class="form-input interval-number" id="intervalValue" min="1" max="60" value="1">
                                         <div class="interval-unit-selector">
-                                            <input type="text" class="form-input" id="intervalUnit" placeholder="минут" readonly onclick="toggleIntervalUnit()">
+                                            <input type="text" class="form-input" id="intervalUnit" data-i18n-placeholder="minute" placeholder="хвилин" readonly onclick="toggleIntervalUnit()">
                                             <div class="interval-dropdown" id="intervalUnitDropdown">
-                                                <div class="interval-option" data-value="minutes">минут</div>
-                                                <div class="interval-option" data-value="hours">часов</div>
-                                                <div class="interval-option" data-value="days">дней</div>
+                                                <div class="interval-option" data-value="minutes" data-i18n="minute">хвилин</div>
+                                                <div class="interval-option" data-value="hours" data-i18n="hour">годин</div>
+                                                <div class="interval-option" data-value="days" data-i18n="day">днів</div>
                                             </div>
                                         </div>
                                     </div>
@@ -250,9 +258,9 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Категория</label>
+                    <label class="form-label" data-i18n="category">Категорія</label>
                     <div class="category-selector">
-                        <input type="text" class="form-input" id="habitCategory" placeholder="Выберите категорию" readonly onclick="toggleCategoryDropdown()">
+                        <input type="text" class="form-input" id="habitCategory" data-i18n-placeholder="selectCategory" placeholder="Оберіть категорію" readonly onclick="toggleCategoryDropdown()">
                         <div class="category-dropdown" id="categoryDropdown">
                             <!-- Categories will be populated here -->
                         </div>
@@ -260,11 +268,11 @@
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('addHabitModal')">
-                        Отмена
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addHabitModal')" data-i18n="cancel">
+                        Скасувати
                     </button>
                     <button type="submit" class="btn">
-                        ➕ Добавить
+                        <span data-i18n="addHabit">➕ Додати</span>
                     </button>
                 </div>
             </form>
@@ -275,91 +283,99 @@
     <div class="modal-overlay" id="editHabitModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">Редактировать привычку</h3>
+                <h3 class="modal-title" data-i18n="editHabit">Редагувати звичку</h3>
                 <button class="modal-close" onclick="closeModal('editHabitModal')">&times;</button>
             </div>
             
             <form id="editHabitForm">
                 <div class="form-group">
-                    <label class="form-label">Название привычки</label>
-                    <input type="text" class="form-input" id="editHabitName" placeholder="Например: Пить воду" required>
+                    <label class="form-label" data-i18n="habitName">Назва звички</label>
+                    <input type="text" class="form-input" id="editHabitName" data-i18n-placeholder="habitNamePlaceholder" placeholder="Наприклад: Пити воду" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Описание</label>
-                    <textarea class="form-textarea" id="editHabitDesc" placeholder="Краткое описание (опционально)"></textarea>
+                    <label class="form-label" data-i18n="description">Опис</label>
+                    <textarea class="form-textarea" id="editHabitDesc" data-i18n-placeholder="descriptionPlaceholder" placeholder="Короткий опис (необов'язково)"></textarea>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Время</label>
+                    <label class="form-label" data-i18n="time">Час</label>
                     <div class="time-selector">
-                        <input type="text" class="form-input" id="editHabitTime" placeholder="Выберите время" readonly onclick="toggleEditTimeDropdown()">
+                        <input type="text" class="form-input" id="editHabitTime" data-i18n-placeholder="selectTime" placeholder="Оберіть час" readonly onclick="toggleEditTimeDropdown()">
                         <div class="time-dropdown" id="editTimeDropdown">
                             <div class="time-picker">
                                 <div class="time-column">
-                                    <div class="time-label">Час</div>
+                                    <div class="time-label" data-i18n="hours">Година</div>
                                     <div class="time-values" id="editHourValues"></div>
                                 </div>
                                 <div class="time-separator">:</div>
                                 <div class="time-column">
-                                    <div class="time-label">Минуты</div>
+                                    <div class="time-label" data-i18n="minutes">Хвилини</div>
                                     <div class="time-values" id="editMinuteValues"></div>
                                 </div>
                             </div>
                             <div class="time-actions">
-                                <button type="button" class="btn btn-secondary" onclick="clearEditTime()">Очистить</button>
-                                <button type="button" class="btn" onclick="confirmEditTime()">Готово</button>
+                                <button type="button" class="btn btn-secondary" onclick="clearEditTime()">
+                                    <span data-i18n="clear">Очистити</span>
+                                </button>
+                                <button type="button" class="btn" onclick="confirmEditTime()">
+                                    <span data-i18n="done">Готово</span>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Напоминания</label>
+                    <label class="form-label" data-i18n="reminder">Нагадування</label>
                     <div class="reminder-selector">
-                        <input type="text" class="form-input" id="editReminderType" placeholder="Выберите тип напоминания" readonly onclick="toggleEditReminderDropdown()">
+                        <input type="text" class="form-input" id="editReminderType" data-i18n-placeholder="selectReminderType" placeholder="Оберіть тип нагадування" readonly onclick="toggleEditReminderDropdown()">
                         <div class="reminder-dropdown" id="editReminderDropdown">
                             <div class="reminder-option" data-value="none">
                                 <div class="reminder-icon">🔕</div>
                                 <div class="reminder-info">
-                                    <div class="reminder-title">Без напоминаний</div>
-                                    <div class="reminder-desc">Отслеживание без уведомлений</div>
+                                    <div class="reminder-title" data-i18n="noReminders">Без нагадувань</div>
+                                    <div class="reminder-desc" data-i18n="noRemindersDesc">Відстеження без сповіщень</div>
                                 </div>
                             </div>
                             <div class="reminder-option" data-value="specific">
                                 <div class="reminder-icon">⏰</div>
                                 <div class="reminder-info">
-                                    <div class="reminder-title">В определенное время</div>
-                                    <div class="reminder-desc">Уведомление в выбранное время</div>
+                                    <div class="reminder-title" data-i18n="atSpecificTime">У певний час</div>
+                                    <div class="reminder-desc" data-i18n="atSpecificTimeDesc">Сповіщення у вибраний час</div>
                                 </div>
                             </div>
                             <div class="reminder-option" data-value="interval">
                                 <div class="reminder-icon">🔄</div>
                                 <div class="reminder-info">
-                                    <div class="reminder-title">Через интервалы</div>
-                                    <div class="reminder-desc">Повторяющиеся уведомления</div>
+                                    <div class="reminder-title" data-i18n="atIntervals">Через інтервали</div>
+                                    <div class="reminder-desc" data-i18n="atIntervalsDesc">Повторювані сповіщення</div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="reminder-settings" id="editSpecificTimeSettings" style="display: none;">
                             <div class="reminder-time-selector">
-                                <input type="text" class="form-input" id="editReminderTime" placeholder="Выберите время напоминания" readonly onclick="toggleEditReminderTimeDropdown()">
+                                <input type="text" class="form-input" id="editReminderTime" data-i18n-placeholder="selectReminderTime" placeholder="Оберіть час нагадування" readonly onclick="toggleEditReminderTimeDropdown()">
                                 <div class="time-dropdown" id="editReminderTimeDropdown">
                                     <div class="time-picker">
                                         <div class="time-column">
-                                            <div class="time-label">Час</div>
+                                            <div class="time-label" data-i18n="hours">Година</div>
                                             <div class="time-values" id="editReminderHourValues"></div>
                                         </div>
                                         <div class="time-separator">:</div>
                                         <div class="time-column">
-                                            <div class="time-label">Минуты</div>
+                                            <div class="time-label" data-i18n="minutes">Хвилини</div>
                                             <div class="time-values" id="editReminderMinuteValues"></div>
                                         </div>
                                     </div>
                                     <div class="time-actions">
-                                        <button type="button" class="btn btn-secondary" onclick="clearEditReminderTime()">Очистить</button>
-                                        <button type="button" class="btn" onclick="confirmEditReminderTime()">Готово</button>
+                                        <button type="button" class="btn btn-secondary" onclick="clearEditReminderTime()">
+                                            <span data-i18n="clear">Очистити</span>
+                                        </button>
+                                        <button type="button" class="btn" onclick="confirmEditReminderTime()">
+                                            <span data-i18n="done">Готово</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -368,15 +384,21 @@
                         <div class="reminder-settings" id="editIntervalSettings" style="display: none;">
                             <div class="interval-selector">
                                 <div class="interval-input-group">
-                                    <label class="form-label">Каждые</label>
+                                    <label class="form-label" data-i18n="every">Кожні</label>
                                     <div class="interval-controls">
                                         <input type="number" class="form-input interval-number" id="editIntervalValue" min="1" max="60" value="1">
                                         <div class="interval-unit-selector">
-                                            <input type="text" class="form-input" id="editIntervalUnit" placeholder="минут" readonly onclick="toggleEditIntervalUnit()">
+                                            <input type="text" class="form-input" id="editIntervalUnit" data-i18n-placeholder="minute" placeholder="хвилин" readonly onclick="toggleEditIntervalUnit()">
                                             <div class="interval-dropdown" id="editIntervalUnitDropdown">
-                                                <div class="interval-option" data-value="minutes">минут</div>
-                                                <div class="interval-option" data-value="hours">часов</div>
-                                                <div class="interval-option" data-value="days">дней</div>
+                                                <div class="interval-option" data-value="minutes">
+                                                    <span data-i18n="minute">хвилин</span>
+                                                </div>
+                                                <div class="interval-option" data-value="hours">
+                                                    <span data-i18n="hour">годин</span>
+                                                </div>
+                                                <div class="interval-option" data-value="days">
+                                                    <span data-i18n="day">днів</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -387,9 +409,9 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Категория</label>
+                    <label class="form-label" data-i18n="category">Категорія</label>
                     <div class="category-selector">
-                        <input type="text" class="form-input" id="editHabitCategory" placeholder="Выберите категорию" readonly onclick="toggleEditCategoryDropdown()">
+                        <input type="text" class="form-input" id="editHabitCategory" data-i18n-placeholder="selectCategory" placeholder="Оберіть категорію" readonly onclick="toggleEditCategoryDropdown()">
                         <div class="category-dropdown" id="editCategoryDropdown">
                             <!-- Categories will be populated here -->
                         </div>
@@ -398,10 +420,10 @@
                 
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('editHabitModal')">
-                        Отмена
+                        <span data-i18n="cancel">Скасувати</span>
                     </button>
                     <button type="submit" class="btn">
-                        ✏️ Сохранить
+                        <span data-i18n="saveChanges">✏️ Зберегти</span>
                     </button>
                 </div>
             </form>
@@ -412,7 +434,7 @@
     <div class="modal-overlay" id="categoriesModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">Управление категориями</h3>
+                <h3 class="modal-title" data-i18n="manageCategoriesTitle">Управління категоріями</h3>
                 <button class="modal-close" onclick="closeModal('categoriesModal')">&times;</button>
             </div>
             
@@ -422,7 +444,7 @@
             
             <div class="modal-actions">
                 <button type="button" class="btn" onclick="openAddCategoryModal()">
-                    ➕ Добавить категорию
+                    <span data-i18n="addCategoryTitle">➕ Додати категорію</span>
                 </button>
             </div>
         </div>
@@ -432,27 +454,27 @@
     <div class="modal-overlay" id="addCategoryModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">Добавить категорию</h3>
+                <h3 class="modal-title" data-i18n="addCategoryTitle">Додати категорію</h3>
                 <button class="modal-close" onclick="closeModal('addCategoryModal')">&times;</button>
             </div>
             
             <form id="addCategoryForm">
                 <div class="form-group">
-                    <label class="form-label">Название категории</label>
-                    <input type="text" class="form-input" id="categoryName" placeholder="Например: Спорт" required>
+                    <label class="form-label" data-i18n="categoryName">Назва категорії</label>
+                    <input type="text" class="form-input" id="categoryName" data-i18n-placeholder="categoryNamePlaceholder" placeholder="Наприклад: Спорт" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Эмодзи (опционально)</label>
+                    <label class="form-label" data-i18n="emojiOptional">Емодзі (опціонально)</label>
                     <input type="text" class="form-input" id="categoryEmoji" placeholder="🏃‍♂️" maxlength="2">
                 </div>
                 
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('addCategoryModal')">
-                        Отмена
+                        <span data-i18n="cancel">Скасувати</span>
                     </button>
                     <button type="submit" class="btn">
-                        ➕ Добавить
+                        <span data-i18n="addCategoryTitle">➕ Додати</span>
                     </button>
                 </div>
             </form>
@@ -540,14 +562,14 @@
     <div class="modal-overlay profile-settings-modal" id="profileSettingsModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">⚙️ Настройки профиля</h3>
+                <h3 class="modal-title" data-i18n="profileSettingsTitle">⚙️ Налаштування профілю</h3>
                 <button class="modal-close" onclick="closeModal('profileSettingsModal')">&times;</button>
             </div>
             
             <div class="settings-section">
                 <h4 class="settings-section-title">
                     <span class="settings-section-icon">👤</span>
-                    Профиль
+                    <span data-i18n="profile">Профіль</span>
                 </h4>
                 
                 <div class="avatar-upload-section">
@@ -555,39 +577,39 @@
                         <span id="settingsAvatar">👤</span>
                     </div>
                     <div class="avatar-upload-info">
-                        <div class="avatar-upload-title">Аватар профиля</div>
-                        <div class="avatar-upload-desc">Нажмите чтобы выбрать эмодзи</div>
+                        <div class="avatar-upload-title" data-i18n="avatarProfile">Аватар профілю</div>
+                        <div class="avatar-upload-desc" data-i18n="clickToSelectEmoji">Натисніть щоб вибрати емодзі</div>
                         <button type="button" class="btn btn-secondary" onclick="changeAvatar()">
-                            Изменить аватар
+                            <span data-i18n="changeAvatar">Змінити аватар</span>
                         </button>
                     </div>
                 </div>
                 
                 <div class="profile-edit-section">
                     <div class="profile-edit-header">
-                        <h5>👤 Имя пользователя</h5>
+                        <h5><span data-i18n="username">👤 Ім'я користувача</span></h5>
                         <button type="button" class="btn btn-secondary btn-small" id="editUsernameBtn" onclick="toggleUsernameEdit()">
-                            Изменить
+                            <span data-i18n="edit">Змінити</span>
                         </button>
                     </div>
                     <div class="profile-display" id="usernameDisplay">
-                        <div class="current-value" id="currentUsername">Текущее имя</div>
+                        <div class="current-value" id="currentUsername" data-i18n="currentName">Поточне ім'я</div>
                     </div>
                     <div class="profile-edit-form" id="usernameEditForm" style="display: none;">
                         <div class="input-with-validation">
-                            <input type="text" class="form-input" id="newUsername" placeholder="Введите новое имя" 
+                            <input type="text" class="form-input" id="newUsername" data-i18n-placeholder="enterNewName" placeholder="Введіть нове ім'я" 
                                    minlength="2" maxlength="50" onblur="validateNewUsername()" oninput="clearValidationError('newUsername')">
                             <div class="validation-message" id="newUsernameValidation"></div>
                         </div>
-                        <div class="input-requirements">
-                            • От 2 до 50 символов • Только буквы, цифры и подчеркивания
+                        <div class="input-requirements" data-i18n="usernameRequirements">
+                            • Від 2 до 50 символів • Тільки літери, цифри та підкреслення
                         </div>
                         <div class="profile-edit-actions">
                             <button type="button" class="btn btn-secondary btn-small" onclick="cancelUsernameEdit()">
-                                Отмена
+                                <span data-i18n="cancel">Скасувати</span>
                             </button>
                             <button type="button" class="btn btn-small" onclick="saveUsername()">
-                                ✓ Сохранить
+                                <span data-i18n="save">✓ Зберегти</span>
                             </button>
                         </div>
                     </div>
@@ -595,9 +617,9 @@
                 
                 <div class="profile-edit-section">
                     <div class="profile-edit-header">
-                        <h5>📧 Email адрес</h5>
+                        <h5><span data-i18n="emailAddress">📧 Email адреса</span></h5>
                         <button type="button" class="btn btn-secondary btn-small" id="editEmailBtn" onclick="toggleEmailEdit()">
-                            Изменить
+                            <span data-i18n="edit">Змінити</span>
                         </button>
                     </div>
                     <div class="profile-display" id="emailDisplay">
@@ -605,19 +627,19 @@
                     </div>
                     <div class="profile-edit-form" id="emailEditForm" style="display: none;">
                         <div class="input-with-validation">
-                            <input type="email" class="form-input" id="newEmail" placeholder="Введите новый email" 
+                            <input type="email" class="form-input" id="newEmail" data-i18n-placeholder="enterNewEmail" placeholder="Введіть новий email" 
                                    onblur="validateNewEmail()" oninput="clearValidationError('newEmail')">
                             <div class="validation-message" id="newEmailValidation"></div>
                         </div>
-                        <div class="input-requirements">
-                            • Действующий адрес электронной почты • Будет использоваться для входа
+                        <div class="input-requirements" data-i18n="emailRequirements">
+                            • Дійсна адреса електронної пошти • Буде використовуватись для входу
                         </div>
                         <div class="profile-edit-actions">
                             <button type="button" class="btn btn-secondary btn-small" onclick="cancelEmailEdit()">
-                                Отмена
+                                <span data-i18n="cancel">Скасувати</span>
                             </button>
                             <button type="button" class="btn btn-small" onclick="saveEmail()">
-                                ✓ Сохранить
+                                <span data-i18n="save">✓ Зберегти</span>
                             </button>
                         </div>
                     </div>
@@ -625,9 +647,9 @@
                 
                 <div class="profile-edit-section">
                     <div class="profile-edit-header">
-                        <h5>🔒 Пароль</h5>
+                        <h5><span>🔒 </span><span data-i18n="password">Пароль</span></h5>
                         <button type="button" class="btn btn-secondary btn-small" id="editPasswordBtn" onclick="togglePasswordEdit()">
-                            Изменить
+                            <span data-i18n="edit">Змінити</span>
                         </button>
                     </div>
                     <div class="profile-display" id="passwordDisplay">
@@ -635,8 +657,8 @@
                     </div>
                     <div class="profile-edit-form" id="passwordEditForm" style="display: none;">
                         <div class="input-with-validation">
-                            <label class="form-label-small">Текущий пароль</label>
-                            <input type="password" class="form-input" id="currentPasswordEdit" placeholder="Введите текущий пароль" 
+                            <label class="form-label-small" data-i18n="currentPassword">Поточний пароль</label>
+                            <input type="password" class="form-input" id="currentPasswordEdit" data-i18n-placeholder="enterCurrentPassword" placeholder="Введіть поточний пароль" 
                                    onblur="validateCurrentPasswordEdit()" oninput="clearValidationError('currentPasswordEdit')">
                             <button type="button" class="password-toggle" onclick="togglePasswordVisibility('currentPasswordEdit')">
                                 <span class="password-toggle-icon">👁️</span>
@@ -645,8 +667,8 @@
                         </div>
                         
                         <div class="input-with-validation">
-                            <label class="form-label-small">Новый пароль</label>
-                            <input type="password" class="form-input" id="newPasswordEdit" placeholder="Введите новый пароль" 
+                            <label class="form-label-small" data-i18n="newPassword">Новий пароль</label>
+                            <input type="password" class="form-input" id="newPasswordEdit" data-i18n-placeholder="enterNewPassword" placeholder="Введіть новий пароль" 
                                    minlength="8" onblur="validateNewPasswordEdit()" oninput="clearValidationError('newPasswordEdit')">
                             <button type="button" class="password-toggle" onclick="togglePasswordVisibility('newPasswordEdit')">
                                 <span class="password-toggle-icon">👁️</span>
@@ -656,8 +678,8 @@
                         </div>
                         
                         <div class="input-with-validation">
-                            <label class="form-label-small">Подтвердите новый пароль</label>
-                            <input type="password" class="form-input" id="confirmPasswordEdit" placeholder="Повторите новый пароль" 
+                            <label class="form-label-small" data-i18n="confirmNewPassword">Підтвердіть новий пароль</label>
+                            <input type="password" class="form-input" id="confirmPasswordEdit" data-i18n-placeholder="repeatNewPassword" placeholder="Повторіть новий пароль" 
                                    onblur="validateConfirmPasswordEdit()" oninput="clearValidationError('confirmPasswordEdit')">
                             <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirmPasswordEdit')">
                                 <span class="password-toggle-icon">👁️</span>
@@ -666,16 +688,16 @@
                         </div>
                         
                         <div class="input-requirements">
-                            <strong>Требования к паролю:</strong><br>
-                            • Минимум 8 символов • Заглавная буква • Цифра • Спецсимвол (!@#$%^&*)
+                            <strong data-i18n="passwordRequirements">Вимоги до пароля:</strong><br>
+                            <span data-i18n="passwordRequirementsDetails">• Мінімум 8 символів • Велика літера • Цифра • Спецсимвол (!@#$%^&*)</span>
                         </div>
                         
                         <div class="profile-edit-actions">
                             <button type="button" class="btn btn-secondary btn-small" onclick="cancelPasswordEdit()">
-                                Отмена
+                                <span data-i18n="cancel">Скасувати</span>
                             </button>
                             <button type="button" class="btn btn-small" onclick="savePassword()">
-                                🔒 Изменить пароль
+                                <span data-i18n="changePasswordBtn">🔒 Змінити пароль</span>
                             </button>
                         </div>
                     </div>
@@ -685,13 +707,13 @@
             <div class="settings-section">
                 <h4 class="settings-section-title">
                     <span class="settings-section-icon">🔔</span>
-                    Уведомления
+                    <span data-i18n="notifications">Сповіщення</span>
                 </h4>
                 
                 <div class="settings-row">
                     <div class="settings-label">
-                        <div class="settings-label-title">Push-уведомления</div>
-                        <div class="settings-label-desc">Получать напоминания о привычках</div>
+                        <div class="settings-label-title" data-i18n="pushNotifications">Push-сповіщення</div>
+                        <div class="settings-label-desc" data-i18n="pushNotificationsDesc">Отримувати нагадування про звички</div>
                     </div>
                     <div class="settings-control">
                         <div class="toggle-switch" id="pushNotifications" onclick="toggleSetting('pushNotifications')"></div>
@@ -700,8 +722,8 @@
                 
                 <div class="settings-row">
                     <div class="settings-label">
-                        <div class="settings-label-title">Email уведомления</div>
-                        <div class="settings-label-desc">Еженедельные отчеты на почту</div>
+                        <div class="settings-label-title" data-i18n="emailNotifications">Email сповіщення</div>
+                        <div class="settings-label-desc" data-i18n="emailNotificationsDesc">Щотижневі звіти на пошту</div>
                     </div>
                     <div class="settings-control">
                         <div class="toggle-switch" id="emailNotifications" onclick="toggleSetting('emailNotifications')"></div>
@@ -710,8 +732,8 @@
                 
                 <div class="settings-row">
                     <div class="settings-label">
-                        <div class="settings-label-title">Звуковые уведомления</div>
-                        <div class="settings-label-desc">Воспроизводить звук при напоминании</div>
+                        <div class="settings-label-title" data-i18n="soundNotifications">Звукові сповіщення</div>
+                        <div class="settings-label-desc" data-i18n="soundNotificationsDesc">Відтворювати звук при нагадуванні</div>
                     </div>
                     <div class="settings-control">
                         <div class="toggle-switch active" id="soundNotifications" onclick="toggleSetting('soundNotifications')"></div>
@@ -722,13 +744,13 @@
             <div class="settings-section">
                 <h4 class="settings-section-title">
                     <span class="settings-section-icon">🎨</span>
-                    Персонализация
+                    <span data-i18n="personalization">Персоналізація</span>
                 </h4>
                 
                 <div class="settings-row">
                     <div class="settings-label">
-                        <div class="settings-label-title">Темная тема</div>
-                        <div class="settings-label-desc">Использовать темное оформление</div>
+                        <div class="settings-label-title" data-i18n="darkTheme">Темна тема</div>
+                        <div class="settings-label-desc" data-i18n="darkThemeDesc">Використовувати темне оформлення</div>
                     </div>
                     <div class="settings-control">
                         <div class="toggle-switch active" id="darkTheme" onclick="toggleSetting('darkTheme')"></div>
@@ -737,8 +759,8 @@
                 
                 <div class="settings-row">
                     <div class="settings-label">
-                        <div class="settings-label-title">Компактный вид</div>
-                        <div class="settings-label-desc">Уменьшить отступы в интерфейсе</div>
+                        <div class="settings-label-title" data-i18n="compactView">Компактний вигляд</div>
+                        <div class="settings-label-desc" data-i18n="compactViewDesc">Зменшити відступи в інтерфейсі</div>
                     </div>
                     <div class="settings-control">
                         <div class="toggle-switch" id="compactView" onclick="toggleSetting('compactView')"></div>
@@ -746,11 +768,10 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Язык интерфейса</label>
-                    <select class="form-select" id="interfaceLanguage">
-                        <option value="ru" selected>Русский</option>
-                        <option value="en">English</option>
-                        <option value="uk">Українська</option>
+                    <label class="form-label" data-i18n="language">Мова інтерфейсу</label>
+                    <select class="form-select" id="interfaceLanguage" onchange="setLanguage(this.value)">
+                        <option value="uk">🇺🇦 Українська</option>
+                        <option value="en">🇬🇧 English</option>
                     </select>
                 </div>
             </div>
@@ -758,13 +779,13 @@
             <div class="settings-section">
                 <h4 class="settings-section-title">
                     <span class="settings-section-icon">📊</span>
-                    Данные и приватность
+                    <span data-i18n="dataAndPrivacy">Дані та приватність</span>
                 </h4>
                 
                 <div class="settings-row">
                     <div class="settings-label">
-                        <div class="settings-label-title">Аналитика</div>
-                        <div class="settings-label-desc">Помочь улучшить приложение</div>
+                        <div class="settings-label-title" data-i18n="analytics">Аналітика</div>
+                        <div class="settings-label-desc" data-i18n="analyticsDesc">Допомогти покращити додаток</div>
                     </div>
                     <div class="settings-control">
                         <div class="toggle-switch active" id="analytics" onclick="toggleSetting('analytics')"></div>
@@ -772,12 +793,12 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Автоматическое резервное копирование</label>
+                    <label class="form-label" data-i18n="autoBackup">Автоматичне резервне копіювання</label>
                     <select class="form-select" id="autoBackup">
-                        <option value="daily">Ежедневно</option>
-                        <option value="weekly" selected>Еженедельно</option>
-                        <option value="monthly">Ежемесячно</option>
-                        <option value="never">Никогда</option>
+                        <option value="daily" data-i18n="daily">Щодня</option>
+                        <option value="weekly" selected data-i18n="weekly">Щотижня</option>
+                        <option value="monthly" data-i18n="monthly">Щомісяця</option>
+                        <option value="never" data-i18n="never">Ніколи</option>
                     </select>
                 </div>
             </div>
@@ -785,17 +806,17 @@
             <div class="danger-zone">
                 <div class="danger-zone-title">
                     <span>⚠️</span>
-                    Опасная зона
+                    <span data-i18n="dangerZone">Небезпечна зона</span>
                 </div>
-                <div class="danger-zone-desc">
-                    Эти действия необратимы. Пожалуйста, будьте осторожны.
+                <div class="danger-zone-desc" data-i18n="dangerZoneDesc">
+                    Ці дії незворотні. Будь ласка, будьте обережні.
                 </div>
                 <div style="display: flex; gap: 12px;">
                     <button type="button" class="btn btn-secondary" onclick="clearAllData()">
-                        Очистить все данные
+                        <span data-i18n="clearAllData">Очистити всі дані</span>
                     </button>
                     <button type="button" class="btn btn-danger" onclick="deleteAccount()">
-                        Удалить аккаунт
+                        <span data-i18n="deleteAccount">Видалити акаунт</span>
                     </button>
                 </div>
             </div>
@@ -862,6 +883,7 @@
         </div>
     </div>
 
+    <script src="i18n.js"></script>
     <script src="java.js"></script>
 </body>
 </html>

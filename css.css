@@ -62,12 +62,14 @@ body {
     font-feature-settings: 'cv11', 'ss01';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
 }
 
 .container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 24px;
+    width: 100%;
 }
 
 /* Header */
@@ -80,6 +82,7 @@ header {
     gap: 20px;
     padding: 20px 0;
     position: relative;
+    width: 100%;
 }
 
 /* Connection Status Indicator */
@@ -121,13 +124,42 @@ header {
     50% { opacity: 0.5; }
 }
 
+/* Language Switcher */
+.language-switcher {
+    display: flex;
+    gap: 8px;
+    background: var(--surface);
+    padding: 4px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+}
+
+.lang-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all var(--animation-fast);
+    opacity: 0.5;
+}
+
+.lang-btn:hover {
+    opacity: 0.8;
+    background: var(--surface-elevated);
+}
+
+.lang-btn.active {
+    opacity: 1;
+    background: var(--accent-gradient);
+    box-shadow: var(--shadow-sm);
+}
+
 header h1 {
     font-size: clamp(1.75rem, 4vw, 2.5rem);
     font-weight: 800;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--text-primary);
     letter-spacing: -0.02em;
     position: relative;
 }
@@ -308,10 +340,7 @@ header h1::after {
 .modal-title {
     font-size: 1.375rem;
     font-weight: 700;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--text-primary);
     letter-spacing: -0.01em;
 }
 
@@ -997,6 +1026,11 @@ header h1::after {
 
 .category-emoji {
     font-size: 1.25rem;
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: unset;
+    color: inherit;
 }
 
 /* Main Layout with Bento Grid */
@@ -1030,10 +1064,7 @@ main {
     font-size: 1.25rem;
     font-weight: 700;
     margin-bottom: 24px;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--text-primary);
     letter-spacing: -0.01em;
 }
 
@@ -1349,24 +1380,102 @@ main {
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
-        padding: 16px;
+        padding: 12px;
     }
     
     header {
-        margin-bottom: 24px;
+        margin-bottom: 20px;
+        padding: 12px 0;
+        gap: 12px;
     }
     
-    .modal {
-        padding: 24px;
-        margin: 16px;
+    header h1 {
+        font-size: 1.5rem;
+        text-align: left;
+    }
+    
+    .header-actions {
+        justify-content: flex-start;
+        width: 100%;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    #userInfo {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 14px;
+    }
+    
+    .user-info-content {
+        flex: 1;
+    }
+    
+    .user-profile-dropdown {
+        left: 0;
+        right: 0;
+        transform: translateY(-10px) scale(0.95);
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    .user-profile-dropdown.active {
+        transform: translateY(0) scale(1);
+    }
+    
+    main {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
     
     .panel {
-        padding: 24px;
+        padding: 16px;
+    }
+    
+    .panel h2 {
+        font-size: 1.125rem;
+        margin-bottom: 16px;
     }
     
     .habit-card {
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .habit-header {
+        margin-bottom: 12px;
+    }
+    
+    .habit-title {
+        font-size: 1rem;
+    }
+    
+    .week-grid {
+        gap: 6px;
+        margin-top: 12px;
+    }
+    
+    .day-label {
+        font-size: 0.65rem;
+        padding-bottom: 4px;
+    }
+    
+    .day-cell {
+        font-size: 0.75rem;
+        min-height: 40px;
+    }
+    
+    .modal {
         padding: 20px;
+        margin: 12px;
+        max-width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+    }
+    
+    .modal-content {
+        padding: 0;
     }
     
     .interval-inputs {
@@ -1376,6 +1485,72 @@ main {
     
     .modal-actions {
         flex-direction: column;
+        gap: 10px;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+        padding: 14px;
+    }
+    
+    #appButtons {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+    
+    #appButtons .btn {
+        width: 100%;
+        min-width: auto;
+        padding: 14px;
+        font-size: 0.95rem;
+    }
+    
+    /* Кнопки добавления привычки */
+    .add-habit-btn {
+        width: 100%;
+        padding: 16px;
+        font-size: 1rem;
+    }
+    
+    /* Категории */
+    .categories-grid {
+        gap: 8px;
+        grid-template-columns: 1fr;
+    }
+    
+    .category-btn {
+        padding: 14px;
+        font-size: 0.95rem;
+        justify-content: flex-start;
+    }
+    
+    /* Формы */
+    .form-group {
+        margin-bottom: 16px;
+    }
+    
+    .form-input,
+    .form-textarea {
+        padding: 12px 16px;
+        font-size: 1rem;
+    }
+    
+    /* Иконки кнопки */
+    .icon-btn {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 8px;
+    }
+    
+    /* Статистика */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .stat-card {
+        padding: 16px;
     }
 }
 
@@ -1404,6 +1579,140 @@ main {
     outline-offset: 2px;
 }
 
+/* Адаптивность для маленьких мобильных */
+@media (max-width: 480px) {
+    .container {
+        padding: 8px;
+    }
+    
+    header {
+        padding: 8px 0;
+    }
+    
+    header h1 {
+        font-size: 1.25rem;
+    }
+    
+    #userInfo {
+        padding: 12px;
+        gap: 12px;
+    }
+    
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+    
+    .user-name {
+        font-size: 0.9rem;
+    }
+    
+    .user-level {
+        font-size: 0.7rem;
+    }
+    
+    .panel {
+        padding: 12px;
+        border-radius: var(--radius-md);
+    }
+    
+    .panel h2 {
+        font-size: 1rem;
+        margin-bottom: 12px;
+    }
+    
+    .habit-card {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+    
+    .habit-title {
+        font-size: 0.95rem;
+    }
+    
+    .week-grid {
+        gap: 3px;
+        margin-top: 10px;
+    }
+    
+    .day-label {
+        font-size: 0.55rem;
+    }
+    
+    .day-cell {
+        font-size: 0.65rem;
+        min-height: 34px;
+    }
+    
+    .connection-status {
+        top: 5px;
+        right: 5px;
+        font-size: 0.65rem;
+        padding: 4px 8px;
+    }
+    
+    .modal {
+        margin: 8px;
+        padding: 16px;
+        max-width: calc(100vw - 16px);
+        border-radius: var(--radius-md);
+    }
+    
+    .modal-header h2 {
+        font-size: 1.125rem;
+    }
+    
+    .btn {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .add-habit-btn {
+        padding: 14px;
+        font-size: 0.95rem;
+    }
+    
+    .form-input,
+    .form-textarea {
+        font-size: 16px; /* Предотвращает зум на iOS */
+    }
+    
+    .icon-btn {
+        min-width: 36px;
+        min-height: 36px;
+    }
+    
+    .categories-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 12px;
+    }
+    
+    /* Убираем hover эффекты на тач-устройствах */
+    .habit-card:hover {
+        transform: none;
+    }
+    
+    .day-cell:hover {
+        transform: none;
+    }
+}
+
+/* Средние планшеты */
+@media (min-width: 481px) and (max-width: 768px) {
+    .week-grid {
+        gap: 6px;
+    }
+    
+    .day-cell {
+        min-height: 42px;
+        font-size: 0.8rem;
+    }
+}
+
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
     * {
@@ -1411,46 +1720,6 @@ main {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
-    }
-
-    /* Mobile optimizations */
-    @media (max-width: 768px) {
-        .container {
-            padding: 16px;
-        }
-        
-        header {
-            flex-direction: column;
-            gap: 16px;
-        }
-        
-        main {
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-        
-        .modal {
-            margin: 10px;
-            padding: 20px;
-            max-height: 90vh;
-        }
-        
-        .btn {
-            padding: 16px 20px;
-            font-size: 1rem;
-        }
-        
-        .habit-card {
-            padding: 16px;
-        }
-        
-        .week-grid {
-            gap: 4px;
-        }
-        
-        .day-cell {
-            font-size: 0.8rem;
-        }
     }
 
     /* Touch targets */
@@ -1631,10 +1900,6 @@ main {
 .user-avatar span {
     position: relative;
     z-index: 2;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .user-info-content {
@@ -1736,10 +2001,6 @@ main {
 .profile-avatar-large span {
     position: relative;
     z-index: 2;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .profile-name {
@@ -2409,4 +2670,122 @@ main {
         transform: translateY(0);
         max-height: 500px;
     }
+}
+
+/* ============================================
+   LIGHT THEME
+   ============================================ */
+body.light-theme {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f5f9;
+    --surface: #ffffff;
+    --surface-elevated: #f8fafc;
+    --surface-glass: rgba(255, 255, 255, 0.8);
+    
+    --accent-primary: #0891b2;
+    --accent-secondary: #7c3aed;
+    --accent-gradient: linear-gradient(135deg, #0891b2 0%, #7c3aed 100%);
+    --accent-glow: 0 0 30px rgba(8, 145, 178, 0.2);
+    
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-inverse: #f8fafc;
+    
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-default: rgba(0, 0, 0, 0.1);
+    --border-accent: rgba(8, 145, 178, 0.3);
+    
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --shadow-glow: 0 0 0 1px rgba(8, 145, 178, 0.1), 0 0 20px rgba(8, 145, 178, 0.15);
+    
+    background: var(--bg-primary);
+    background-image: 
+        radial-gradient(circle at 20% 80%, rgba(8, 145, 178, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(8, 145, 178, 0.03) 0%, transparent 50%);
+}
+
+/* Light theme specific adjustments */
+body.light-theme .habit-card {
+    border: 1px solid var(--border-default);
+}
+
+body.light-theme .day-cell {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+}
+
+body.light-theme .day-cell:hover {
+    background: var(--surface-elevated);
+    border-color: var(--border-accent);
+}
+
+body.light-theme .modal {
+    background: var(--bg-secondary);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .form-input,
+body.light-theme .form-textarea,
+body.light-theme .form-select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+}
+
+body.light-theme .form-input:focus,
+body.light-theme .form-textarea:focus,
+body.light-theme .form-select:focus {
+    border-color: var(--accent-primary);
+    background: var(--bg-secondary);
+}
+
+body.light-theme .category-option:hover,
+body.light-theme .reminder-option:hover,
+body.light-theme .interval-option:hover {
+    background: var(--bg-tertiary);
+}
+
+body.light-theme .category-option.selected,
+body.light-theme .reminder-option.selected,
+body.light-theme .interval-option.selected {
+    background: rgba(8, 145, 178, 0.1);
+    border-color: var(--accent-primary);
+}
+
+body.light-theme .user-profile-dropdown {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-lg);
+}
+
+body.light-theme .profile-menu-item:hover {
+    background: var(--bg-tertiary);
+}
+
+body.light-theme .category-item:hover {
+    background: var(--bg-tertiary);
+}
+
+body.light-theme .notification.success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+body.light-theme .notification.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+body.light-theme .notification.info {
+    background: #dbeafe;
+    color: #1e40af;
 }
