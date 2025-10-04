@@ -36,9 +36,11 @@ const translations = {
         divine: 'Божественний',
         lvl: 'Рівень',
         
-        
+        // ========== AUTH ==========
         login: 'Увійти',
+        loginTitle: 'Вхід в акаунт',
         register: 'Реєстрація',
+        registerTitle: 'Створення акаунта',
         logout: 'Вийти',
         email: 'Email',
         password: 'Пароль',
@@ -49,7 +51,7 @@ const translations = {
         switchToLogin: 'Переключитися на вхід',
         switchToRegister: 'Переключитися на реєстрацію',
         
-        
+        // ========== NAVIGATION ==========
         myHabits: '📋 Мої звички',
         statistics: '📊 Статистика',
         addHabit: '➕ Додати звичку',
@@ -304,6 +306,25 @@ const translations = {
         pending: 'Очікується',
         active: 'Активна',
         inactive: 'Неактивна',
+        
+        // Повідомлення
+        categoryAdded: 'Категорія додана!',
+        categoryDeleted: 'Категорія видалена',
+        networkError: 'Помилка мережі',
+        logoutSuccess: 'Вихід виконано успішно',
+        habitsLoadError: 'Помилка завантаження звичок',
+        habitAdded: 'Звичка додана!',
+        habitUpdated: 'Звичка оновлена!',
+        habitDeleted: 'Звичка видалена',
+        deleteNetworkError: 'Помилка мережі при видаленні',
+        saveError: 'Помилка збереження',
+        statsLoadError: 'Помилка завантаження статистики',
+        cellNotFound: 'Помилка: не знайдено комірку для відмітки',
+        habitMarked: '✅ Звичка відмічена як виконана!',
+        markSaveError: 'Помилка при збереженні відмітки',
+        enterHabitName: 'Введіть назву звички',
+        enterCategoryName: 'Введіть назву категорії',
+        habitNotSelected: 'Помилка: не вибрано звичку для редагування',
     },
     
     en: {
@@ -342,9 +363,11 @@ const translations = {
         divine: 'Divine',
         lvl: 'Level',
         
-        
+        // ========== AUTH ==========
         login: 'Login',
+        loginTitle: 'Login to Account',
         register: 'Register',
+        registerTitle: 'Create Account',
         logout: 'Logout',
         email: 'Email',
         password: 'Password',
@@ -355,6 +378,7 @@ const translations = {
         switchToLogin: 'Switch to login',
         switchToRegister: 'Switch to register',
         
+        // ========== NAVIGATION ==========
         
         myHabits: '📋 My Habits',
         statistics: '📊 Statistics',
@@ -609,6 +633,25 @@ const translations = {
         pending: 'Pending',
         active: 'Active',
         inactive: 'Inactive',
+        
+        // Messages
+        categoryAdded: 'Category added!',
+        categoryDeleted: 'Category deleted',
+        networkError: 'Network error',
+        logoutSuccess: 'Logout successful',
+        habitsLoadError: 'Error loading habits',
+        habitAdded: 'Habit added!',
+        habitUpdated: 'Habit updated!',
+        habitDeleted: 'Habit deleted',
+        deleteNetworkError: 'Network error while deleting',
+        saveError: 'Save error',
+        statsLoadError: 'Error loading statistics',
+        cellNotFound: 'Error: cell not found for marking',
+        habitMarked: '✅ Habit marked as completed!',
+        markSaveError: 'Error saving mark',
+        enterHabitName: 'Enter habit name',
+        enterCategoryName: 'Enter category name',
+        habitNotSelected: 'Error: no habit selected for editing',
     }
 };
 

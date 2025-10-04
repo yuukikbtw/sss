@@ -1187,7 +1187,7 @@ function addCategory(name, emoji) {
         isDefault: false
     });
     saveCategories();
-    showSuccess('Категория добавлена!');
+    showSuccess(t('categoryAdded'));
 }
 
 function deleteCategory(categoryId) {
@@ -1196,7 +1196,7 @@ function deleteCategory(categoryId) {
     categories = categories.filter(c => c.id !== categoryId);
     saveCategories();
     renderCategoriesList();
-    showSuccess('Категория удалена');
+    showSuccess(t('categoryDeleted'));
 }
 
 
@@ -1227,11 +1227,11 @@ function openAuthModal(mode = 'login') {
     const registerForm = document.getElementById('registerForm');
     
     if (mode === 'login') {
-        title.textContent = 'Вход в аккаунт';
+        title.textContent = t('loginTitle');
         loginForm.style.display = 'block';
         registerForm.style.display = 'none';
     } else {
-        title.textContent = 'Создание аккаунта';
+        title.textContent = t('registerTitle');
         loginForm.style.display = 'none';
         registerForm.style.display = 'block';
     }
@@ -1275,7 +1275,7 @@ async function login(email, password) {
             showError(data.error);
         }
     } catch (error) {
-        showError('Ошибка сети');
+        showError(t('networkError'));
         console.error(error);
     }
 }
@@ -1319,7 +1319,7 @@ async function logout() {
         }
         
         updateUIForLoggedOutUser();
-        showSuccess('Выход выполнен успешно');
+        showSuccess(t('logoutSuccess'));
     } catch (error) {
         console.error(error);
     }
@@ -1404,7 +1404,7 @@ async function fetchHabits() {
             });
         }
     } catch (error) {
-        showError('Ошибка загрузки привычек');
+        showError(t('habitsLoadError'));
         console.error('Ошибка в fetchHabits:', error);
     }
 }
@@ -1417,7 +1417,7 @@ async function createHabit(data) {
         });
         
         if (response.ok) {
-            showSuccess('Привычка добавлена!');
+            showSuccess(t('habitAdded'));
             await fetchHabits();
             
             
@@ -1491,7 +1491,7 @@ async function createHabit(data) {
             showError(error.error || 'Ошибка создания привычки');
         }
     } catch (error) {
-        showError('Ошибка сети');
+        showError(t('networkError'));
         console.error(error);
     }
 }
@@ -1511,7 +1511,7 @@ async function updateHabit(habitId, data) {
             const updatedHabit = await response.json();
             console.log('Оновлена звичка з сервера:', updatedHabit);
             
-            showSuccess('Привычка обновлена!');
+            showSuccess(t('habitUpdated'));
             await fetchHabits();
             
             
@@ -1537,7 +1537,7 @@ async function updateHabit(habitId, data) {
             showError(error.error || 'Ошибка обновления привычки');
         }
     } catch (error) {
-        showError('Ошибка сети');
+        showError(t('networkError'));
         console.error(error);
     }
 }
@@ -1556,7 +1556,7 @@ async function deleteHabit(habitId) {
         console.log('Ответ сервера на удаление:', response.status, response.statusText);
         
         if (response.ok) {
-            showSuccess('Привычка удалена');
+            showSuccess(t('habitDeleted'));
             clearHabitReminder(habitId); 
             
             
@@ -1575,7 +1575,7 @@ async function deleteHabit(habitId) {
             showError(`Ошибка удаления: ${response.status} ${response.statusText}`);
         }
     } catch (error) {
-        showError('Ошибка сети при удалении');
+        showError(t('deleteNetworkError'));
         console.error('Ошибка сети:', error);
     }
 }
@@ -1594,7 +1594,7 @@ async function toggleEntry(habitId, date, status) {
             }
         }
     } catch (error) {
-        showError('Ошибка сохранения');
+        showError(t('saveError'));
         console.error(error);
     }
 }
@@ -1626,7 +1626,7 @@ async function loadStats(habitId) {
         
         renderStats(weekStats, monthStats, habitData);
     } catch (error) {
-        showError('Ошибка загрузки статистики');
+        showError(t('statsLoadError'));
         console.error('Ошибка в loadStats:', error);
         
         
@@ -1756,7 +1756,7 @@ async function toggleDay(habitId, date) {
             document.querySelectorAll('.day-cell').forEach(c => {
                 console.log(`Ячейка: habitId="${c.dataset.habitId}", date="${c.dataset.date}"`);
             });
-            showError('Ошибка: не найдена ячейка для отметки');
+            showError(t('cellNotFound'));
             return;
         }
         
@@ -1850,11 +1850,11 @@ async function toggleDay(habitId, date) {
             
             setTimeout(() => updateWeekCells(), 500);
         } else {
-            showError('Ошибка при сохранении отметки');
+            showError(t('markSaveError'));
             console.error('Ошибка HTTP:', response.status);
         }
     } catch (error) {
-        showError('Ошибка при сохранении отметки');
+        showError(t('markSaveError'));
         console.error('Ошибка в toggleDay:', error);
     }
 }
@@ -2108,7 +2108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (!name) {
-            showError('Введите название привычки');
+            showError(t('enterHabitName'));
             return;
         }
         
@@ -2149,7 +2149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         
         if (!editingHabitId) {
-            showError('Ошибка: не выбрана привычка для редактирования');
+            showError(t('habitNotSelected'));
             return;
         }
         
@@ -2188,7 +2188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (!name) {
-            showError('Введите название привычки');
+            showError(t('enterHabitName'));
             return;
         }
         

@@ -485,74 +485,72 @@
     <div class="modal-overlay" id="authModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title" id="authModalTitle">Вход в аккаунт</h3>
+                <h3 class="modal-title" id="authModalTitle" data-i18n="login"></h3>
                 <button class="modal-close" onclick="closeModal('authModal')">&times;</button>
             </div>
             
             
             <form id="loginForm" style="display: block;">
                 <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-input" id="loginEmail" placeholder="your@email.com" required>
+                    <label class="form-label" data-i18n="email"></label>
+                    <input type="email" class="form-input" id="loginEmail" data-i18n-placeholder="email" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Пароль</label>
-                    <input type="password" class="form-input" id="loginPassword" placeholder="Введите пароль" required>
+                    <label class="form-label" data-i18n="password"></label>
+                    <input type="password" class="form-input" id="loginPassword" data-i18n-placeholder="password" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="remember-me">
                         <input type="checkbox" id="rememberMe">
                         <span class="checkmark"></span>
-                        Запомнить аккаунт
+                        <span data-i18n="rememberMe"></span>
                     </label>
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('authModal')">
-                        Отмена
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('authModal')" data-i18n="cancel">
                     </button>
                     <button type="submit" class="btn">
-                        🔑 Войти
+                        🔑 <span data-i18n="login"></span>
                     </button>
                 </div>
                 
                 <div style="text-align: center; margin-top: 16px;">
-                    <span style="color: var(--text-muted);">Нет аккаунта? </span>
-                    <button type="button" class="btn-link" onclick="switchAuthMode('register')">Зарегистрируйтесь</button>
+                    <span style="color: var(--text-muted);" data-i18n="noAccount"></span>
+                    <button type="button" class="btn-link" onclick="switchAuthMode('register')" data-i18n="switchToRegister"></button>
                 </div>
             </form>
             
             
             <form id="registerForm" style="display: none;">
                 <div class="form-group">
-                    <label class="form-label">Имя пользователя</label>
-                    <input type="text" class="form-input" id="registerUsername" placeholder="Ваше имя" required>
+                    <label class="form-label" data-i18n="username"></label>
+                    <input type="text" class="form-input" id="registerUsername" data-i18n-placeholder="username" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-input" id="registerEmail" placeholder="your@email.com" required>
+                    <label class="form-label" data-i18n="email"></label>
+                    <input type="email" class="form-input" id="registerEmail" data-i18n-placeholder="email" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Пароль</label>
-                    <input type="password" class="form-input" id="registerPassword" placeholder="Минимум 6 символов" minlength="6" required>
+                    <label class="form-label" data-i18n="password"></label>
+                    <input type="password" class="form-input" id="registerPassword" data-i18n-placeholder="password" minlength="6" required>
                 </div>
                 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('authModal')">
-                        Отмена
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('authModal')" data-i18n="cancel">
                     </button>
                     <button type="submit" class="btn">
-                        ✨ Создать аккаунт
+                        ✨ <span data-i18n="register"></span>
                     </button>
                 </div>
                 
                 <div style="text-align: center; margin-top: 16px;">
-                    <span style="color: var(--text-muted);">Уже есть аккаунт? </span>
-                    <button type="button" class="btn-link" onclick="switchAuthMode('login')">Войдите</button>
+                    <span style="color: var(--text-muted);" data-i18n="haveAccount"></span>
+                    <button type="button" class="btn-link" onclick="switchAuthMode('login')" data-i18n="switchToLogin"></button>
                 </div>
             </form>
         </div>
