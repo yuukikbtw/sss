@@ -1,17 +1,17 @@
-// Умная система определения API сервера
+
 let API_BASE = localStorage.getItem('api_base') || 'https://sss-vcq4.onrender.com/api';
 let isServerOnline = false;
 let serverCheckInterval = null;
 
-// Возможные адреса сервера (по приоритету)
+
 const POSSIBLE_API_URLS = [
-    'https://sss-vcq4.onrender.com/api',  // Облачный сервер - работает ВЕЗДЕ! (ПЕРВЫЙ = ПРИОРИТЕТ)
+    'https://sss-vcq4.onrender.com/api',  
     'http://localhost:5001/api',
     'http://127.0.0.1:5001/api',
     'http://192.168.0.105:5001/api'
 ];
 
-// Функция обновления статуса подключения
+
 function updateConnectionStatus(online) {
     isServerOnline = online;
     const statusEl = document.getElementById('connectionStatus');
@@ -25,10 +25,10 @@ function updateConnectionStatus(online) {
     console.log(online ? '✅ ' + t('online') : '❌ ' + t('offline'));
 }
 
-// Helper функция для API запросов с автоматической отправкой credentials
+
 async function apiFetch(url, options = {}) {
     const defaultOptions = {
-        credentials: 'include',  // ВАЖНО: отправляем cookies с сессией!
+        credentials: 'include',  
         headers: {
             'Content-Type': 'application/json',
             ...options.headers
@@ -43,7 +43,7 @@ let categories = [];
 let selectedHabitId = null;
 let currentUser = null;
 
-// Default categories (function to support translations)
+
 function getDefaultCategories() {
     return [
         { id: 'sport', name: t('sport'), emoji: '🏃‍♂️', isDefault: true },
@@ -60,34 +60,34 @@ function getDefaultCategories() {
 }
 const defaultCategories = getDefaultCategories();
 
-// ==================== AWARDS SYSTEM ====================
 
-// Achievement badges
+
+
 const badges = {
-    // Milestone badges
+    
     firstStep: { id: 'firstStep', name: 'Первый шаг', emoji: '👣', description: 'Выполнить первую привычку', type: 'milestone' },
     weekWarrior: { id: 'weekWarrior', name: 'Недельный воин', emoji: '⚔️', description: 'Выполнять привычку 7 дней подряд', type: 'streak' },
     monthMaster: { id: 'monthMaster', name: 'Мастер месяца', emoji: '👑', description: 'Выполнять привычку 30 дней подряд', type: 'streak' },
     hundredHero: { id: 'hundredHero', name: 'Герой сотни', emoji: '💯', description: 'Выполнить привычку 100 раз', type: 'total' },
     
-    // Category badges
+    
     sportsman: { id: 'sportsman', name: 'Спортсмен', emoji: '🏆', description: 'Выполнить 50 спортивных привычек', type: 'category', category: 'sport' },
     scholar: { id: 'scholar', name: 'Учёный', emoji: '🎓', description: 'Выполнить 50 учебных привычек', type: 'category', category: 'study' },
     healthGuru: { id: 'healthGuru', name: 'Гуру здоровья', emoji: '🌿', description: 'Выполнить 50 привычек здоровья', type: 'category', category: 'health' },
     workaholic: { id: 'workaholic', name: 'Трудоголик', emoji: '💼', description: 'Выполнить 50 рабочих привычек', type: 'category', category: 'work' },
     
-    // Special badges
+    
     perfectWeek: { id: 'perfectWeek', name: 'Идеальная неделя', emoji: '✨', description: 'Выполнить все привычки за неделю', type: 'perfect' },
     earlyBird: { id: 'earlyBird', name: 'Ранняя пташка', emoji: '🌅', description: 'Выполнить 20 привычек до 8:00', type: 'special' },
     nightOwl: { id: 'nightOwl', name: 'Сова', emoji: '🦉', description: 'Выполнить 20 привычек после 22:00', type: 'special' },
     streakMaster: { id: 'streakMaster', name: 'Мастер серий', emoji: '🔥', description: 'Иметь серию в 100 дней', type: 'streak' },
     
-    // Collection badges
+    
     categoryCollector: { id: 'categoryCollector', name: 'Коллекционер', emoji: '🗂️', description: 'Создать привычки во всех категориях', type: 'collection' },
     habitMaster: { id: 'habitMaster', name: 'Мастер привычек', emoji: '🧙‍♂️', description: 'Создать 25 привычек', type: 'collection' }
 };
 
-// User levels system (function to support translations)
+
 function getLevels() {
     return [
         { level: 1, name: t('beginner'), emoji: '🌱', minXP: 0, maxXP: 99, color: '#22c55e' },
@@ -105,7 +105,7 @@ function getLevels() {
 let levels = getLevels();
 
 
-// User progress tracking
+
 let userProgress = {
     xp: 0,
     level: 1,
@@ -120,9 +120,9 @@ let userProgress = {
     createdHabits: 0
 };
 
-// ==================== AWARDS FUNCTIONS ====================
 
-// Initialize user progress
+
+
 function initUserProgress() {
     const stored = localStorage.getItem('userProgress');
     if (stored) {
@@ -131,20 +131,20 @@ function initUserProgress() {
     updateLevelDisplay();
 }
 
-// Save user progress
+
 function saveUserProgress() {
     localStorage.setItem('userProgress', JSON.stringify(userProgress));
 }
 
-// Calculate XP for habit completion
+
 function calculateXP(habit) {
     let baseXP = 10;
     
-    // Bonus for difficulty
+    
     if (habit.difficulty === 'hard') baseXP += 5;
     else if (habit.difficulty === 'medium') baseXP += 2;
     
-    // Streak bonus
+    
     const streak = userProgress.currentStreaks[habit.id] || 0;
     if (streak >= 7) baseXP += 5;
     if (streak >= 30) baseXP += 10;
@@ -153,12 +153,12 @@ function calculateXP(habit) {
     return baseXP;
 }
 
-// Award XP and check for level up
+
 function awardXP(amount) {
     const oldLevel = userProgress.level;
     userProgress.xp += amount;
     
-    // Check for level up
+    
     const newLevel = getCurrentLevel();
     if (newLevel.level > oldLevel) {
         userProgress.level = newLevel.level;
@@ -169,7 +169,7 @@ function awardXP(amount) {
     saveUserProgress();
 }
 
-// Get current level based on XP
+
 function getCurrentLevel() {
     const levelsArray = getLevels();
     for (let i = levelsArray.length - 1; i >= 0; i--) {
@@ -180,16 +180,16 @@ function getCurrentLevel() {
     return levelsArray[0];
 }
 
-// Check and award badges
+
 function checkBadges(habit, completedTime) {
     const newBadges = [];
     
-    // First step badge
+    
     if (!userProgress.earnedBadges.includes('firstStep') && userProgress.totalHabitsCompleted === 1) {
         newBadges.push('firstStep');
     }
     
-    // Streak badges
+    
     const streak = userProgress.currentStreaks[habit.id] || 0;
     if (streak === 7 && !userProgress.earnedBadges.includes('weekWarrior')) {
         newBadges.push('weekWarrior');
@@ -201,12 +201,12 @@ function checkBadges(habit, completedTime) {
         newBadges.push('streakMaster');
     }
     
-    // Total completion badges
+    
     if (userProgress.totalHabitsCompleted === 100 && !userProgress.earnedBadges.includes('hundredHero')) {
         newBadges.push('hundredHero');
     }
     
-    // Category badges
+    
     const categoryId = habit.category;
     const categoryCount = userProgress.categoryStats[categoryId] || 0;
     if (categoryCount === 50) {
@@ -222,7 +222,7 @@ function checkBadges(habit, completedTime) {
         }
     }
     
-    // Time-based badges
+    
     if (completedTime) {
         const hour = new Date(completedTime).getHours();
         if (hour < 8) {
@@ -239,18 +239,18 @@ function checkBadges(habit, completedTime) {
         }
     }
     
-    // Collection badges
+    
     if (userProgress.createdHabits === 25 && !userProgress.earnedBadges.includes('habitMaster')) {
         newBadges.push('habitMaster');
     }
     
-    // Check category collector
+    
     const uniqueCategories = new Set(habits.map(h => h.category));
     if (uniqueCategories.size >= defaultCategories.length && !userProgress.earnedBadges.includes('categoryCollector')) {
         newBadges.push('categoryCollector');
     }
     
-    // Award new badges
+    
     newBadges.forEach(badgeId => {
         userProgress.earnedBadges.push(badgeId);
         showBadgeNotification(badges[badgeId]);
@@ -261,13 +261,13 @@ function checkBadges(habit, completedTime) {
     }
 }
 
-// Update level display in UI
+
 function updateLevelDisplay() {
     const currentLevel = getCurrentLevel();
     const levelsArray = getLevels();
     const nextLevel = levelsArray.find(l => l.level === currentLevel.level + 1);
     
-    // Update level info
+    
     const levelElement = document.getElementById('userLevel');
     if (levelElement) {
         levelElement.innerHTML = `
@@ -277,7 +277,7 @@ function updateLevelDisplay() {
         `;
     }
     
-    // Update XP bar
+    
     const xpBarElement = document.getElementById('xpBar');
     if (xpBarElement && nextLevel) {
         const progress = ((userProgress.xp - currentLevel.minXP) / (nextLevel.minXP - currentLevel.minXP)) * 100;
@@ -286,7 +286,7 @@ function updateLevelDisplay() {
             <span class="xp-text">${userProgress.xp}/${nextLevel.minXP} XP</span>
         `;
     } else if (xpBarElement) {
-        // Max level
+        
         xpBarElement.innerHTML = `
             <div class="xp-bar-fill" style="width: 100%; background: ${currentLevel.color}"></div>
             <span class="xp-text">MAX LEVEL</span>
@@ -294,7 +294,7 @@ function updateLevelDisplay() {
     }
 }
 
-// Show level up notification
+
 function showLevelUpNotification(level) {
     const notification = document.createElement('div');
     notification.className = 'level-up-notification';
@@ -323,7 +323,7 @@ function showLevelUpNotification(level) {
     }, 4000);
 }
 
-// Show badge notification
+
 function showBadgeNotification(badge) {
     const notification = document.createElement('div');
     notification.className = 'badge-notification';
@@ -352,7 +352,7 @@ function showBadgeNotification(badge) {
     }, 3000);
 }
 
-// Show XP notification
+
 function showXPNotification(xp) {
     const notification = document.createElement('div');
     notification.className = 'xp-notification';
@@ -377,15 +377,15 @@ function showXPNotification(xp) {
     }, 2000);
 }
 
-// Initialize categories
+
 function initCategories() {
     const stored = localStorage.getItem('habitCategories');
     if (stored) {
         const loadedCategories = JSON.parse(stored);
-        // Оновлюємо назви дефолтних категорій з перекладами
+        
         categories = loadedCategories.map(cat => {
             if (cat.isDefault) {
-                // Знаходимо відповідну дефолтну категорію з перекладами
+                
                 const defaultCat = defaultCategories.find(dc => dc.id === cat.id);
                 if (defaultCat) {
                     return { ...cat, name: defaultCat.name };
@@ -403,12 +403,12 @@ function saveCategories() {
     localStorage.setItem('habitCategories', JSON.stringify(categories));
 }
 
-// DOM elements
+
 const habitsList = document.getElementById('habitsList');
 const statsPanel = document.getElementById('statsPanel');
 const errorMessage = document.getElementById('errorMessage');
 
-// Utilities
+
 function showError(msg) {
     errorMessage.innerHTML = `<div class="error">${msg}</div>`;
     setTimeout(() => errorMessage.innerHTML = '', 5000);
@@ -442,7 +442,7 @@ function getWeekDays() {
     return days;
 }
 
-// Modal functions
+
 function openModal(modalId) {
     document.getElementById(modalId).classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -452,12 +452,12 @@ function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
     document.body.style.overflow = '';
     
-    // Reset profile settings when closing profile modal
+    
     if (modalId === 'profileSettingsModal') {
         resetProfileSettings();
     }
     
-    // Close category dropdown if open
+    
     const dropdown = document.getElementById('categoryDropdown');
     const selector = document.querySelector('.category-selector');
     if (dropdown) {
@@ -472,7 +472,7 @@ function openAddHabitModal() {
 }
 
 function openCategoriesModal() {
-    // Close user profile dropdown if it's open
+    
     if (typeof closeUserProfileDropdown === 'function') {
         closeUserProfileDropdown();
     }
@@ -485,7 +485,7 @@ function openAddCategoryModal() {
     openModal('addCategoryModal');
 }
 
-// Category functions
+
 function populateCategoryDropdown() {
     const dropdown = document.getElementById('categoryDropdown');
     dropdown.innerHTML = categories.map(cat => `
@@ -505,19 +505,19 @@ function toggleCategoryDropdown() {
     const dropdown = document.getElementById('categoryDropdown');
     const selector = document.querySelector('.category-selector');
     
-    // Закрываем другие выпадающие списки
+    
     closeAllDropdowns('categoryDropdown');
     
-    // Если dropdown открыт, закрываем
+    
     if (dropdown.classList.contains('active')) {
         dropdown.classList.remove('active');
         selector.classList.remove('active');
     } else {
-        // Иначе открываем
+        
         dropdown.classList.add('active');
         selector.classList.add('active');
         
-        // Скроллим dropdown в зону видимости если нужно
+        
         setTimeout(() => {
             const dropdownRect = dropdown.getBoundingClientRect();
             const modalRect = dropdown.closest('.modal').getBoundingClientRect();
@@ -529,13 +529,13 @@ function toggleCategoryDropdown() {
     }
 }
 
-// Время выбора
+
 let selectedHour = null;
 let selectedMinute = null;
 let reminderSelectedHour = null;
 let reminderSelectedMinute = null;
 
-// Время выбора для редактирования
+
 let editSelectedHour = null;
 let editSelectedMinute = null;
 let editReminderSelectedHour = null;
@@ -562,7 +562,7 @@ function initTimePicker() {
     const hourValues = document.getElementById('hourValues');
     const minuteValues = document.getElementById('minuteValues');
     
-    // Создаем значения часов
+    
     hourValues.innerHTML = '';
     for (let i = 0; i < 24; i++) {
         const hour = i.toString().padStart(2, '0');
@@ -573,7 +573,7 @@ function initTimePicker() {
         hourValues.appendChild(hourElement);
     }
     
-    // Создаем значения минут
+    
     minuteValues.innerHTML = '';
     for (let i = 0; i < 60; i += 5) {
         const minute = i.toString().padStart(2, '0');
@@ -584,7 +584,7 @@ function initTimePicker() {
         minuteValues.appendChild(minuteElement);
     }
     
-    // Выделяем текущие выбранные значения
+    
     if (selectedHour !== null) {
         const hourEl = hourValues.children[selectedHour];
         if (hourEl) hourEl.classList.add('selected');
@@ -597,21 +597,21 @@ function initTimePicker() {
 }
 
 function selectHour(hour, element) {
-    // Убираем выделение с предыдущего
+    
     const parent = element.parentElement;
     parent.querySelectorAll('.time-value').forEach(el => el.classList.remove('selected'));
     
-    // Выделяем текущий
+    
     element.classList.add('selected');
     selectedHour = hour;
 }
 
 function selectMinute(minute, element) {
-    // Убираем выделение с предыдущего
+    
     const parent = element.parentElement;
     parent.querySelectorAll('.time-value').forEach(el => el.classList.remove('selected'));
     
-    // Выделяем текущий
+    
     element.classList.add('selected');
     selectedMinute = minute;
 }
@@ -639,7 +639,7 @@ function clearTime() {
     selector.classList.remove('active');
 }
 
-// Напоминания
+
 function toggleReminderDropdown() {
     const dropdown = document.getElementById('reminderDropdown');
     const selector = document.querySelector('.reminder-selector');
@@ -656,13 +656,13 @@ function toggleReminderDropdown() {
 }
 
 function selectReminderType(type, element) {
-    // Убираем выделение с других опций
+    
     element.parentElement.querySelectorAll('.reminder-option').forEach(el => el.classList.remove('selected'));
     
-    // Выделяем текущую опцию
+    
     element.classList.add('selected');
     
-    // Обновляем значение в инпуте
+    
     const titles = {
         'none': `🔕 ${t('noReminders')}`,
         'specific': `⏰ ${t('atSpecificTime')}`,
@@ -672,21 +672,21 @@ function selectReminderType(type, element) {
     document.getElementById('reminderType').value = titles[type];
     document.getElementById('reminderType').dataset.value = type;
     
-    // Показываем/скрываем настройки
+    
     const specificSettings = document.getElementById('specificTimeSettings');
     const intervalSettings = document.getElementById('intervalSettings');
     
     specificSettings.style.display = type === 'specific' ? 'block' : 'none';
     intervalSettings.style.display = type === 'interval' ? 'block' : 'none';
     
-    // Закрываем dropdown
+    
     const dropdown = document.getElementById('reminderDropdown');
     const selector = document.querySelector('.reminder-selector');
     dropdown.classList.remove('active');
     selector.classList.remove('active');
 }
 
-// Время напоминания
+
 function toggleReminderTimeDropdown() {
     const dropdown = document.getElementById('reminderTimeDropdown');
     const selector = document.querySelector('.reminder-time-selector');
@@ -707,7 +707,7 @@ function initReminderTimePicker() {
     const hourValues = document.getElementById('reminderHourValues');
     const minuteValues = document.getElementById('reminderMinuteValues');
     
-    // Создаем значения часов
+    
     hourValues.innerHTML = '';
     for (let i = 0; i < 24; i++) {
         const hour = i.toString().padStart(2, '0');
@@ -718,7 +718,7 @@ function initReminderTimePicker() {
         hourValues.appendChild(hourElement);
     }
     
-    // Создаем значения минут
+    
     minuteValues.innerHTML = '';
     for (let i = 0; i < 60; i += 5) {
         const minute = i.toString().padStart(2, '0');
@@ -729,7 +729,7 @@ function initReminderTimePicker() {
         minuteValues.appendChild(minuteElement);
     }
     
-    // Выделяем текущие выбранные значения
+    
     if (reminderSelectedHour !== null) {
         const hourEl = hourValues.children[reminderSelectedHour];
         if (hourEl) hourEl.classList.add('selected');
@@ -778,7 +778,7 @@ function clearReminderTime() {
     selector.classList.remove('active');
 }
 
-// Интервалы
+
 function toggleIntervalUnit() {
     const dropdown = document.getElementById('intervalUnitDropdown');
     const selector = document.querySelector('.interval-unit-selector');
@@ -801,24 +801,24 @@ function selectIntervalUnit(unit, element) {
         'days': t('day')
     };
     
-    // Убираем выделение с других опций
+    
     element.parentElement.querySelectorAll('.interval-option').forEach(el => el.classList.remove('selected'));
     
-    // Выделяем текущую опцию
+    
     element.classList.add('selected');
     
-    // Обновляем значение
+    
     document.getElementById('intervalUnit').value = units[unit];
     document.getElementById('intervalUnit').dataset.value = unit;
     
-    // Закрываем dropdown
+    
     const dropdown = document.getElementById('intervalUnitDropdown');
     const selector = document.querySelector('.interval-unit-selector');
     dropdown.classList.remove('active');
     selector.classList.remove('active');
 }
 
-// Утилита для закрытия всех dropdowns кроме указанного
+
 function closeAllDropdowns(except = null) {
     const dropdowns = [
         { dropdown: 'categoryDropdown', selector: '.category-selector' },
@@ -826,7 +826,7 @@ function closeAllDropdowns(except = null) {
         { dropdown: 'reminderDropdown', selector: '.reminder-selector' },
         { dropdown: 'reminderTimeDropdown', selector: '.reminder-time-selector' },
         { dropdown: 'intervalUnitDropdown', selector: '.interval-unit-selector' },
-        // Edit dropdowns
+        
         { dropdown: 'editCategoryDropdown', selector: '.category-selector' },
         { dropdown: 'editTimeDropdown', selector: '.time-selector' },
         { dropdown: 'editReminderDropdown', selector: '.reminder-selector' },
@@ -839,7 +839,7 @@ function closeAllDropdowns(except = null) {
             const dropdownEl = document.getElementById(dropdown);
             if (dropdownEl) {
                 dropdownEl.classList.remove('active');
-                // Найдем соответствующий селектор для конкретного dropdown
+                
                 const parentSelector = dropdownEl.closest('.category-selector, .time-selector, .reminder-selector, .reminder-time-selector, .interval-unit-selector');
                 if (parentSelector) {
                     parentSelector.classList.remove('active');
@@ -849,7 +849,7 @@ function closeAllDropdowns(except = null) {
     });
 }
 
-// Функции для редактирования категории
+
 function populateEditCategoryDropdown() {
     const dropdown = document.getElementById('editCategoryDropdown');
     dropdown.innerHTML = categories.map(cat => `
@@ -894,7 +894,7 @@ function selectEditCategory(categoryId) {
     selector.classList.remove('active');
 }
 
-// Функции для редактирования времени
+
 function toggleEditTimeDropdown() {
     const dropdown = document.getElementById('editTimeDropdown');
     const selector = dropdown.closest('.time-selector');
@@ -983,7 +983,7 @@ function clearEditTime() {
     selector.classList.remove('active');
 }
 
-// Функции для редактирования напоминаний
+
 function toggleEditReminderDropdown() {
     const dropdown = document.getElementById('editReminderDropdown');
     const selector = dropdown.closest('.reminder-selector');
@@ -1024,7 +1024,7 @@ function selectEditReminderType(type, element) {
     selector.classList.remove('active');
 }
 
-// Функции для времени напоминания в режиме редактирования
+
 function toggleEditReminderTimeDropdown() {
     const dropdown = document.getElementById('editReminderTimeDropdown');
     const selector = dropdown.closest('.reminder-time-selector');
@@ -1113,7 +1113,7 @@ function clearEditReminderTime() {
     selector.classList.remove('active');
 }
 
-// Функции для интервалов в режиме редактирования
+
 function toggleEditIntervalUnit() {
     const dropdown = document.getElementById('editIntervalUnitDropdown');
     const selector = dropdown.closest('.interval-unit-selector');
@@ -1156,7 +1156,7 @@ function selectCategory(categoryId) {
         input.dataset.categoryId = categoryId;
     }
     
-    // Закрываем dropdown с анимацией
+    
     const dropdown = document.getElementById('categoryDropdown');
     const selector = document.querySelector('.category-selector');
     dropdown.classList.remove('active');
@@ -1199,7 +1199,7 @@ function deleteCategory(categoryId) {
     showSuccess('Категория удалена');
 }
 
-// Auth functions
+
 function clearAuthFields(type) {
     if (type === 'login') {
         document.getElementById('loginEmail').value = '';
@@ -1256,7 +1256,7 @@ async function login(email, password) {
             currentUser = data.user;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             
-            // Сохраняем аккаунт если нужно
+            
             const rememberMe = document.getElementById('rememberMe').checked;
             if (rememberMe) {
                 localStorage.setItem('rememberedUser', JSON.stringify({
@@ -1265,7 +1265,7 @@ async function login(email, password) {
                 }));
             }
             
-            // Очищаем поля входа
+            
             clearAuthFields('login');
             updateUIForLoggedInUser();
             closeModal('authModal');
@@ -1293,7 +1293,7 @@ async function register(username, email, password) {
         console.log('Данные от сервера:', data);
         
         if (response.ok) {
-            // Очищаем поля регистрации
+            
             clearAuthFields('register');
             showSuccess(data.message);
             switchAuthMode('login');
@@ -1312,7 +1312,7 @@ async function logout() {
         currentUser = null;
         localStorage.removeItem('currentUser');
         
-        // Удаляем сохраненный аккаунт если пользователь выходит
+        
         const rememberMe = document.getElementById('rememberMe')?.checked;
         if (!rememberMe) {
             localStorage.removeItem('rememberedUser');
@@ -1326,10 +1326,10 @@ async function logout() {
 }
 
 async function checkAuth() {
-    // Проверяем доступность сервера ВСЕГДА
+    
     try {
         const response = await apiFetch(`${API_BASE}/me`);
-        // Если получили ЛЮБОЙ ответ (даже 401) - сервер онлайн!
+        
         updateConnectionStatus(true);
         
         if (response.ok) {
@@ -1341,11 +1341,11 @@ async function checkAuth() {
             return;
         }
     } catch (error) {
-        // Сервер недоступен
+        
         updateConnectionStatus(false);
     }
     
-    // Если API не вернул пользователя, проверим localStorage
+    
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
         try {
@@ -1358,7 +1358,7 @@ async function checkAuth() {
         }
     }
     
-    // Пользователь не авторизован
+    
     updateUIForLoggedOutUser();
 }
 
@@ -1367,22 +1367,22 @@ function updateUIForLoggedInUser() {
     document.getElementById('userInfo').style.display = 'flex';
     document.getElementById('appButtons').style.display = 'flex';
     document.getElementById('userName').textContent = currentUser.username;
-    updateProfileUI(); // Оновлюємо весь профіль включно з email
+    updateProfileUI(); 
 }
 
 function updateUIForLoggedOutUser() {
-    // Показываем кнопки авторизации
+    
     document.getElementById('authButtons').style.display = 'flex';
     document.getElementById('userInfo').style.display = 'none';
     document.getElementById('appButtons').style.display = 'none';
     
-    // Очищаем данные
+    
     currentUser = null;
     habits = [];
     renderHabits();
 }
 
-// API calls
+
 async function fetchHabits() {
     try {
         const response = await apiFetch(`${API_BASE}/habits`);
@@ -1393,9 +1393,9 @@ async function fetchHabits() {
         habits = await response.json();
         console.log('Загружены привычки:', habits.map(h => ({ id: h.id, name: h.name })));
         renderHabits();
-        updateUserStats(); // Оновлюємо статистику після завантаження звичок
+        updateUserStats(); 
         
-        // Setup reminders for all habits
+        
         if (currentUser) {
             habits.forEach(habit => {
                 if (habit.reminder && habit.reminder.type !== 'none') {
@@ -1420,30 +1420,30 @@ async function createHabit(data) {
             showSuccess('Привычка добавлена!');
             await fetchHabits();
             
-            // *** СИСТЕМА НАГРАД: Создание привычки ***
+            
             userProgress.createdHabits++;
             
-            // Проверяем бейджи за создание привычек
+            
             const habitCreationBadges = [];
             
-            // Бейдж за создание 25 привычек
+            
             if (userProgress.createdHabits === 25 && !userProgress.earnedBadges.includes('habitMaster')) {
                 habitCreationBadges.push('habitMaster');
             }
             
-            // Бейдж коллекционера (если создал привычки во всех категориях)
+            
             const uniqueCategories = new Set(habits.map(h => h.category));
             if (uniqueCategories.size >= defaultCategories.length && !userProgress.earnedBadges.includes('categoryCollector')) {
                 habitCreationBadges.push('categoryCollector');
             }
             
-            // Награждаем бейджи за создание
+            
             habitCreationBadges.forEach(badgeId => {
                 userProgress.earnedBadges.push(badgeId);
                 showBadgeNotification(badges[badgeId]);
             });
             
-            // Награждаем XP за создание привычки
+            
             awardXP(5);
             setTimeout(() => {
                 showXPNotification(5);
@@ -1453,7 +1453,7 @@ async function createHabit(data) {
                 saveUserProgress();
             }
             
-            // Setup reminder for the new habit
+            
             const newHabit = await response.json();
             if (newHabit.reminder && newHabit.reminder.type !== 'none') {
                 setupHabitReminder(newHabit);
@@ -1462,13 +1462,13 @@ async function createHabit(data) {
             closeModal('addHabitModal');
             document.getElementById('addHabitForm').reset();
             
-            // Reset custom fields
+            
             selectedHour = null;
             selectedMinute = null;
             reminderSelectedHour = null;
             reminderSelectedMinute = null;
             
-            // Clear all inputs and dropdowns
+            
             document.getElementById('habitTime').value = '';
             document.getElementById('reminderType').value = '';
             document.getElementById('reminderType').removeAttribute('data-value');
@@ -1476,15 +1476,15 @@ async function createHabit(data) {
             document.getElementById('intervalUnit').value = '';
             document.getElementById('intervalUnit').removeAttribute('data-value');
             
-            // Hide reminder settings
+            
             document.getElementById('specificTimeSettings').style.display = 'none';
             document.getElementById('intervalSettings').style.display = 'none';
             
-            // Clear category
+            
             const categoryInput = document.getElementById('habitCategory');
             if (categoryInput) categoryInput.removeAttribute('data-category-id');
             
-            // Close all dropdowns
+            
             closeAllDropdowns();
         } else {
             const error = await response.json();
@@ -1514,7 +1514,7 @@ async function updateHabit(habitId, data) {
             showSuccess('Привычка обновлена!');
             await fetchHabits();
             
-            // Setup reminder for the updated habit
+            
             clearHabitReminder(habitId);
             if (updatedHabit.reminder && updatedHabit.reminder.type !== 'none') {
                 setupHabitReminder(updatedHabit);
@@ -1522,14 +1522,14 @@ async function updateHabit(habitId, data) {
             
             closeModal('editHabitModal');
             
-            // Reset edit fields
+            
             editSelectedHour = null;
             editSelectedMinute = null;
             editReminderSelectedHour = null;
             editReminderSelectedMinute = null;
             editingHabitId = null;
             
-            // Close all dropdowns
+            
             closeAllDropdowns();
         } else {
             const error = await response.json();
@@ -1557,9 +1557,9 @@ async function deleteHabit(habitId) {
         
         if (response.ok) {
             showSuccess('Привычка удалена');
-            clearHabitReminder(habitId); // Очищаем напоминания
+            clearHabitReminder(habitId); 
             
-            // Закрываем панель статистики если была открыта эта привычка
+            
             if (selectedHabitId == habitId) {
                 selectedHabitId = null;
                 const statsPanel = document.getElementById('statsPanel');
@@ -1568,7 +1568,7 @@ async function deleteHabit(habitId) {
                 }
             }
             
-            await fetchHabits(); // Обновляем список привычек
+            await fetchHabits(); 
         } else {
             const errorData = await response.text();
             console.error('Ошибка удаления:', response.status, errorData);
@@ -1629,12 +1629,12 @@ async function loadStats(habitId) {
         showError('Ошибка загрузки статистики');
         console.error('Ошибка в loadStats:', error);
         
-        // Показываем базовую статистику при ошибке
+        
         renderStats(null, null, { streak: { current: 0, max: 0 } });
     }
 }
 
-// Rendering
+
 function renderHabits() {
     console.log('Рендеринг привычек. Всего привычек:', habits.length);
     console.log('ID привычек:', habits.map(h => h.id));
@@ -1740,12 +1740,12 @@ async function updateWeekCells() {
     }
 }
 
-// Функция для переключения состояния выполнения привычки в определенный день
+
 async function toggleDay(habitId, date) {
     console.log(`Переключение состояния привычки ${habitId} на дату ${date}`);
     
     try {
-        // Поиск ячейки
+        
         console.log('Поиск ячейки с селектором:', `[data-habit-id="${habitId}"][data-date="${date}"]`);
         
         const cell = document.querySelector(`[data-habit-id="${habitId}"][data-date="${date}"]`);
@@ -1761,11 +1761,11 @@ async function toggleDay(habitId, date) {
         }
         
         const isDone = cell.classList.contains('done');
-        const newStatus = isDone ? 0 : 1; // 0 = не выполнено, 1 = выполнено
+        const newStatus = isDone ? 0 : 1; 
         
         console.log('Текущее состояние:', isDone ? 'выполнено' : 'не выполнено', '-> новое:', newStatus === 1 ? 'выполнено' : 'не выполнено');
         
-        // Отправляем запрос на сервер
+        
         const response = await apiFetch(`${API_BASE}/habits/${habitId}/tick`, {
             method: 'POST',
             body: JSON.stringify({
@@ -1777,40 +1777,40 @@ async function toggleDay(habitId, date) {
         console.log('Ответ сервера:', response.status, response.statusText);
         
         if (response.ok) {
-            // Обновляем визуальное состояние
+            
             if (newStatus === 1) {
                 cell.classList.add('done');
                 showSuccess('✅ Привычка отмечена как выполненная!');
                 
-                // *** СИСТЕМА НАГРАД ***
-                // Найдем привычку для получения информации
+                
+                
                 const habit = habits.find(h => h.id === habitId);
                 if (habit) {
-                    // Обновляем прогресс пользователя
+                    
                     userProgress.totalHabitsCompleted++;
                     
-                    // Обновляем статистику по категориям
+                    
                     if (habit.category) {
                         userProgress.categoryStats[habit.category] = (userProgress.categoryStats[habit.category] || 0) + 1;
                     }
                     
-                    // Обновляем серии
+                    
                     userProgress.currentStreaks[habitId] = (userProgress.currentStreaks[habitId] || 0) + 1;
                     
-                    // Обновляем максимальную серию
+                    
                     const currentStreak = userProgress.currentStreaks[habitId];
                     if (currentStreak > userProgress.longestStreak) {
                         userProgress.longestStreak = currentStreak;
                     }
                     
-                    // Рассчитываем и награждаем XP
+                    
                     const earnedXP = calculateXP(habit);
                     awardXP(earnedXP);
                     
-                    // Проверяем бейджи
+                    
                     checkBadges(habit, new Date());
                     
-                    // Показываем уведомление о XP
+                    
                     setTimeout(() => {
                         showXPNotification(earnedXP);
                     }, 500);
@@ -1819,35 +1819,35 @@ async function toggleDay(habitId, date) {
                 cell.classList.remove('done');
                 showInfo('❌ Отметка о выполнении снята');
                 
-                // *** ОТМЕНЯЕМ ПРОГРЕСС ***
+                
                 const habit = habits.find(h => h.id === habitId);
                 if (habit) {
-                    // Уменьшаем общий счетчик
+                    
                     if (userProgress.totalHabitsCompleted > 0) {
                         userProgress.totalHabitsCompleted--;
                     }
                     
-                    // Уменьшаем статистику по категориям
+                    
                     if (habit.category && userProgress.categoryStats[habit.category] > 0) {
                         userProgress.categoryStats[habit.category]--;
                     }
                     
-                    // Сбрасываем серию
+                    
                     userProgress.currentStreaks[habitId] = 0;
                     
-                    // Сохраняем прогресс
+                    
                     saveUserProgress();
                 }
             }
             
-            // Обновляем статистику если эта привычка выбрана
+            
             console.log('Перевірка оновлення статистики:', { selectedHabitId, habitId, рівні: selectedHabitId == habitId });
             if (selectedHabitId == habitId) {
                 console.log('Оновлюємо статистику для звички:', habitId);
-                setTimeout(() => loadStats(habitId), 500); // Небольшая задержка для обновления данных на сервере
+                setTimeout(() => loadStats(habitId), 500); 
             }
             
-            // Также обновляем отображение дней для пересчета серий
+            
             setTimeout(() => updateWeekCells(), 500);
         } else {
             showError('Ошибка при сохранении отметки');
@@ -1865,8 +1865,8 @@ function renderStats(weekStats, monthStats, habitData) {
     console.log('renderStats викликано з:', { weekStats, monthStats, habitData });
     console.log('Streak:', streak);
     
-    // Значения по умолчанию для статистики
-    // Используем данные из сервера напрямую
+    
+    
     const safeWeekStats = {
         completed_days: weekStats?.completed_days || 0,
         total_days: weekStats?.total_days || 0,
@@ -1917,7 +1917,7 @@ function editHabit(habitId) {
     console.log('Редактирование привычки ID:', habitId);
     console.log('Доступные привычки:', habits.map(h => ({ id: h.id, name: h.name })));
     
-    const habit = habits.find(h => h.id == habitId); // Используем == для сравнения
+    const habit = habits.find(h => h.id == habitId); 
     if (!habit) {
         showError(`Привычка с ID ${habitId} не найдена в локальном массиве`);
         console.error('Привычка не найдена. ID:', habitId, 'Тип:', typeof habitId);
@@ -1926,11 +1926,11 @@ function editHabit(habitId) {
     
     editingHabitId = habitId;
     
-    // Заполняем форму данными привычки
+    
     document.getElementById('editHabitName').value = habit.name;
     document.getElementById('editHabitDesc').value = habit.description || '';
     
-    // Время
+    
     if (habit.time) {
         document.getElementById('editHabitTime').value = habit.time;
         const [hours, minutes] = habit.time.split(':');
@@ -1942,7 +1942,7 @@ function editHabit(habitId) {
         editSelectedMinute = null;
     }
     
-    // Категория
+    
     const categoryInput = document.getElementById('editHabitCategory');
     if (habit.category) {
         const category = categories.find(c => c.id === habit.category);
@@ -1955,7 +1955,7 @@ function editHabit(habitId) {
         categoryInput.removeAttribute('data-category-id');
     }
     
-    // Напоминания
+    
     const reminderTypeInput = document.getElementById('editReminderType');
     const specificSettings = document.getElementById('editSpecificTimeSettings');
     const intervalSettings = document.getElementById('editIntervalSettings');
@@ -2002,10 +2002,10 @@ function editHabit(habitId) {
         intervalSettings.style.display = 'none';
     }
     
-    // Заполняем dropdown категорий
+    
     populateEditCategoryDropdown();
     
-    // Открываем модальное окно
+    
     openModal('editHabitModal');
 }
 
@@ -2020,26 +2020,26 @@ function toggleDay(habitId, date) {
     toggleEntry(habitId, date, !isDone);
 }
 
-// Event listeners
+
 document.addEventListener('DOMContentLoaded', () => {
     initCategories();
-    initUserProgress(); // Инициализируем систему наград
-    checkAuth(); // Проверяем авторизацию вместо сразу загрузки привычек
+    initUserProgress(); 
+    checkAuth(); 
     
-    // Initialize profile editing functionality
+    
     initProfileEditing();
     
-    // Handle Escape key to close modals
+    
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            // Check if profile settings modal is open
+            
             const profileModal = document.getElementById('profileSettingsModal');
             if (profileModal && profileModal.classList.contains('active')) {
                 closeModal('profileSettingsModal');
                 return;
             }
             
-            // Check for other open modals
+            
             const openModal = document.querySelector('.modal-overlay.active');
             if (openModal) {
                 closeModal(openModal.id);
@@ -2047,7 +2047,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Auth form submissions
+    
     document.getElementById('loginForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
@@ -2069,7 +2069,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Form submissions
+    
     document.getElementById('addHabitForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -2079,7 +2079,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const categoryInput = document.getElementById('habitCategory');
         const categoryId = categoryInput.dataset.categoryId;
         
-        // Get reminder settings
+        
         const reminderTypeInput = document.getElementById('reminderType');
         const reminderType = reminderTypeInput.dataset.value || 'none';
         let reminder = { type: 'none' };
@@ -2138,13 +2138,13 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal('addCategoryModal');
         document.getElementById('addCategoryForm').reset();
         
-        // Refresh categories modal if it's open
+        
         if (document.getElementById('categoriesModal').classList.contains('active')) {
             renderCategoriesList();
         }
     });
 
-    // Edit habit form submission
+    
     document.getElementById('editHabitForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -2159,7 +2159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const categoryInput = document.getElementById('editHabitCategory');
         const categoryId = categoryInput.dataset.categoryId;
         
-        // Get reminder settings
+        
         const reminderTypeInput = document.getElementById('editReminderType');
         const reminderType = reminderTypeInput.dataset.value || 'none';
         let reminder = { type: 'none' };
@@ -2203,7 +2203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await updateHabit(editingHabitId, habitData);
     });
 
-    // Close modals on overlay click
+    
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
@@ -2212,7 +2212,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Close dropdowns when clicking outside
+    
     document.addEventListener('click', (e) => {
         const dropdowns = [
             { dropdown: 'categoryDropdown', selector: '.category-selector', input: 'habitCategory' },
@@ -2220,7 +2220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { dropdown: 'reminderDropdown', selector: '.reminder-selector', input: 'reminderType' },
             { dropdown: 'reminderTimeDropdown', selector: '.reminder-time-selector', input: 'reminderTime' },
             { dropdown: 'intervalUnitDropdown', selector: '.interval-unit-selector', input: 'intervalUnit' },
-            // Edit dropdowns
+            
             { dropdown: 'editCategoryDropdown', selector: '.category-selector', input: 'editHabitCategory' },
             { dropdown: 'editTimeDropdown', selector: '.time-selector', input: 'editHabitTime' },
             { dropdown: 'editReminderDropdown', selector: '.reminder-selector', input: 'editReminderType' },
@@ -2241,13 +2241,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Setup reminder options click handlers
+    
     document.addEventListener('click', (e) => {
         if (e.target.closest('.reminder-option')) {
             const option = e.target.closest('.reminder-option');
             const value = option.dataset.value;
             
-            // Определяем, в каком модальном окне мы находимся
+            
             const editModal = option.closest('#editHabitModal');
             if (editModal) {
                 selectEditReminderType(value, option);
@@ -2260,7 +2260,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const option = e.target.closest('.interval-option');
             const value = option.dataset.value;
             
-            // Определяем, в каком модальном окне мы находимся
+            
             const editModal = option.closest('#editHabitModal');
             if (editModal) {
                 selectEditIntervalUnit(value, option);
@@ -2270,26 +2270,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Select habit for stats and handle edit/delete buttons
+    
     if (habitsList) {
         habitsList.addEventListener('click', async (e) => {
-            // Handle edit button
+            
             if (e.target.closest('.icon-btn.edit')) {
                 e.stopPropagation();
                 const button = e.target.closest('.icon-btn.edit');
-                const habitId = button.dataset.habitId; // Убираем parseInt
+                const habitId = button.dataset.habitId; 
                 console.log('Попытка редактирования привычки ID:', habitId);
                 console.log('Доступные привычки в массиве:', habits.map(h => ({ id: h.id, name: h.name })));
                 
                 if (habitId) {
-                    // Проверяем, существует ли привычка в локальном массиве
+                    
                     const habitExists = habits.find(h => h.id == habitId);
                     if (!habitExists) {
                         console.log('Привычка не найдена в локальном массиве. Обновляем...');
                         showError('Привычка не найдена. Обновляем список...');
-                        await fetchHabits(); // Обновляем список
+                        await fetchHabits(); 
                         
-                        // Проверяем еще раз после обновления
+                        
                         const habitExistsAfterUpdate = habits.find(h => h.id == habitId);
                         if (!habitExistsAfterUpdate) {
                             console.log('Привычка не найдена даже после обновления');
@@ -2302,23 +2302,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // Handle delete button
+            
             if (e.target.closest('.icon-btn.delete')) {
                 e.stopPropagation();
                 const button = e.target.closest('.icon-btn.delete');
-                const habitId = button.dataset.habitId; // Убираем parseInt
+                const habitId = button.dataset.habitId; 
                 console.log('Попытка удаления привычки ID:', habitId);
                 console.log('Доступные привычки в массиве:', habits.map(h => ({ id: h.id, name: h.name })));
                 
                 if (habitId) {
-                    // Проверяем, существует ли привычка в локальном массиве
+                    
                     const habitExists = habits.find(h => h.id == habitId);
                     if (!habitExists) {
                         console.log('Привычка не найдена в локальном массиве. Обновляем...');
                         showError('Привычка не найдена. Обновляем список...');
-                        await fetchHabits(); // Обновляем список
+                        await fetchHabits(); 
                         
-                        // Проверяем еще раз после обновления
+                        
                         const habitExistsAfterUpdate = habits.find(h => h.id == habitId);
                         if (!habitExistsAfterUpdate) {
                             console.log('Привычка не найдена даже после обновления');
@@ -2331,11 +2331,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // Handle day cell toggle
+            
             if (e.target.closest('.day-cell')) {
                 e.stopPropagation();
                 const cell = e.target.closest('.day-cell');
-                const habitId = cell.dataset.habitId; // Оставляем как строку, не используем parseInt
+                const habitId = cell.dataset.habitId; 
                 const date = cell.dataset.date;
                 
                 console.log('Клик по ячейке:', {
@@ -2352,30 +2352,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // Handle card selection for stats
+            
             const card = e.target.closest('.habit-card');
             if (!card) return;
             
-            const habitId = card.dataset.id; // Убираем parseInt
+            const habitId = card.dataset.id; 
             if (habitId && selectedHabitId !== habitId) {
                 selectedHabitId = habitId;
                 loadStats(habitId);
                 
-                // Visual feedback
+                
                 document.querySelectorAll('.habit-card').forEach(c => c.style.borderColor = '#2d4152');
                 card.style.borderColor = '#4da3ff';
             }
         });
     }
     
-    // Load remembered user on page load
+    
     loadRememberedUser();
     
-    // Request notification permission
+    
     requestNotificationPermission();
 });
 
-// ==================== REMINDER SYSTEM ====================
+
 async function requestNotificationPermission() {
     if ('Notification' in window) {
         if (Notification.permission === 'default') {
@@ -2404,16 +2404,16 @@ function createNotification(title, body, icon = '🎯') {
             notification.close();
         };
         
-        // Auto close after 5 seconds
+        
         setTimeout(() => notification.close(), 5000);
     }
 }
 
-// Store reminder intervals
+
 let activeReminders = new Map();
 
 function setupHabitReminder(habit) {
-    // Clear existing reminder for this habit
+    
     clearHabitReminder(habit.id);
     
     if (!habit.reminder || habit.reminder.type === 'none') return;
@@ -2422,12 +2422,12 @@ function setupHabitReminder(habit) {
     let nextReminderTime;
     
     if (habit.reminder.type === 'specific') {
-        // Set reminder for specific time
+        
         const [hours, minutes] = habit.reminder.time.split(':');
         nextReminderTime = new Date();
         nextReminderTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
         
-        // If time has passed today, set for tomorrow
+        
         if (nextReminderTime <= now) {
             nextReminderTime.setDate(nextReminderTime.getDate() + 1);
         }
@@ -2439,14 +2439,14 @@ function setupHabitReminder(habit) {
                 habit.description || 'Не забудьте выполнить свою привычку!',
                 habit.category?.emoji || '📝'
             );
-            // Set up next day's reminder
+            
             setupHabitReminder(habit);
         }, timeUntilReminder);
         
         activeReminders.set(habit.id, timeoutId);
         
     } else if (habit.reminder.type === 'interval') {
-        // Set interval reminder
+        
         let intervalMs;
         const value = habit.reminder.interval.value;
         const unit = habit.reminder.interval.unit;
@@ -2466,7 +2466,7 @@ function setupHabitReminder(habit) {
         }
         
         const intervalId = setInterval(() => {
-            // Check if habit was already completed today
+            
             if (!isHabitCompletedToday(habit.id)) {
                 createNotification(
                     `🔔 Напоминание: ${habit.name}`,
@@ -2491,16 +2491,16 @@ function clearHabitReminder(habitId) {
 
 function isHabitCompletedToday(habitId) {
     const today = new Date().toISOString().split('T')[0];
-    // Используем глобальную переменную habits вместо localStorage
+    
     const habit = habits.find(h => h.id === habitId);
     return habit && habit.completedDates && habit.completedDates.includes(today);
 }
 
-// Setup all habit reminders when habits are loaded
+
 function setupAllReminders() {
     if (currentUser) {
         fetchHabits().then(() => {
-            // Используем глобальную переменную habits вместо localStorage
+            
             habits.forEach(habit => {
                 if (habit.reminder && habit.reminder.type !== 'none') {
                     setupHabitReminder(habit);
@@ -2510,9 +2510,9 @@ function setupAllReminders() {
     }
 }
 
-// ==================== PROFILE FUNCTIONS ====================
 
-// User profile settings
+
+
 let userSettings = {
     avatar: '👤',
     pushNotifications: false,
@@ -2525,7 +2525,7 @@ let userSettings = {
     interfaceLanguage: 'ru'
 };
 
-// Available avatars
+
 const avatarEmojis = [
     '👤', '😀', '😎', '🤓', '😊', '🥳', '😇', '🤔', '😋', '🙂',
     '🐱', '🐶', '🐺', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐸',
@@ -2533,43 +2533,43 @@ const avatarEmojis = [
     '🌈', '🌙', '☀️', '🌸', '🌺', '🍀', '🌿', '🌊', '❄️', '🔮'
 ];
 
-// Initialize user profile on page load
+
 function initUserProfile() {
-    // Load user settings from localStorage
+    
     const stored = localStorage.getItem('userSettings');
     if (stored) {
         userSettings = { ...userSettings, ...JSON.parse(stored) };
     }
     
-    // Update profile UI
+    
     updateProfileUI();
     applyUserSettings();
 }
 
-// Update profile UI elements
+
 function updateProfileUI() {
     if (currentUser) {
-        // Update avatar
+        
         updateAvatarUI();
         
-        // Update user info
+        
         document.getElementById('userName').textContent = currentUser.username;
         document.getElementById('profileName').textContent = currentUser.username;
         document.getElementById('profileEmail').textContent = currentUser.email;
         
-        // Update profile display values
+        
         updateProfileDisplay();
         
-        // Update settings form (если они есть)
+        
         const settingsUsername = document.getElementById('settingsUsername');
         const settingsEmail = document.getElementById('settingsEmail');
         if (settingsUsername) settingsUsername.value = currentUser.username;
         if (settingsEmail) settingsEmail.value = currentUser.email;
         
-        // Update stats
+        
         updateUserStats();
         
-        // Show user info
+        
         document.getElementById('userInfo').style.display = 'flex';
         document.getElementById('authButtons').style.display = 'none';
         document.getElementById('appButtons').style.display = 'flex';
@@ -2580,7 +2580,7 @@ function updateProfileUI() {
     }
 }
 
-// Validation for new username in profile edit
+
 function validateNewUsername() {
     const usernameInput = document.getElementById('newUsername');
     if (!usernameInput) {
@@ -2619,7 +2619,7 @@ function validateNewUsername() {
     return true;
 }
 
-// Validation for new email in profile edit
+
 function validateNewEmail() {
     const emailInput = document.getElementById('newEmail');
     const email = emailInput.value.trim();
@@ -2644,7 +2644,7 @@ function validateNewEmail() {
     return true;
 }
 
-// Validation for current password in edit form
+
 async function validateCurrentPasswordEdit() {
     const passwordInput = document.getElementById('currentPasswordEdit');
     const password = passwordInput.value;
@@ -2654,8 +2654,8 @@ async function validateCurrentPasswordEdit() {
         return false;
     }
     
-    // TODO: Add actual password verification
-    // For now, just check it's not empty
+    
+    
     if (password.length < 3) {
         showValidationError('currentPasswordEdit', 'Неверный пароль');
         return false;
@@ -2665,7 +2665,7 @@ async function validateCurrentPasswordEdit() {
     return true;
 }
 
-// Validation for new password in edit form
+
 function validateNewPasswordEdit() {
     const passwordInput = document.getElementById('newPasswordEdit');
     const password = passwordInput.value;
@@ -2681,7 +2681,7 @@ function validateNewPasswordEdit() {
     return true;
 }
 
-// Validation for confirm password in edit form
+
 function validateConfirmPasswordEdit() {
     const confirmInput = document.getElementById('confirmPasswordEdit');
     const newPasswordInput = document.getElementById('newPasswordEdit');
@@ -2702,7 +2702,7 @@ function validateConfirmPasswordEdit() {
     return true;
 }
 
-// Update password strength indicator for edit form
+
 function updatePasswordStrengthEdit(password) {
     if (!password) {
         const strengthElement = document.getElementById('passwordStrength');
@@ -2714,23 +2714,23 @@ function updatePasswordStrengthEdit(password) {
     updatePasswordStrength(password);
 }
 
-// Initialize profile editing event listeners
+
 function initProfileEditing() {
-    // Real-time validation for new username
+    
     const newUsernameInput = document.getElementById('newUsername');
     if (newUsernameInput) {
         newUsernameInput.addEventListener('input', validateNewUsername);
         newUsernameInput.addEventListener('blur', validateNewUsername);
     }
     
-    // Real-time validation for new email
+    
     const newEmailInput = document.getElementById('newEmail');
     if (newEmailInput) {
         newEmailInput.addEventListener('input', validateNewEmail);
         newEmailInput.addEventListener('blur', validateNewEmail);
     }
     
-    // Real-time validation for password editing
+    
     const currentPasswordInput = document.getElementById('currentPasswordEdit');
     if (currentPasswordInput) {
         currentPasswordInput.addEventListener('blur', validateCurrentPasswordEdit);
@@ -2752,14 +2752,14 @@ function initProfileEditing() {
     }
 }
 
-// Reset all profile editing changes
+
 function resetProfileSettings() {
-    // Reset all editing states
+    
     editingStates.username = false;
     editingStates.email = false;
     editingStates.password = false;
     
-    // Reset username section
+    
     const usernameSection = document.querySelector('.profile-edit-section');
     if (usernameSection) {
         usernameSection.classList.remove('editing', 'success');
@@ -2774,13 +2774,13 @@ function resetProfileSettings() {
             usernameBtn.disabled = false;
         }
         
-        // Clear form and validation
+        
         const usernameInput = document.getElementById('newUsername');
         if (usernameInput) usernameInput.value = '';
         clearValidationError('newUsername');
     }
     
-    // Reset email section
+    
     const sections = document.querySelectorAll('.profile-edit-section');
     if (sections[1]) {
         const emailSection = sections[1];
@@ -2796,13 +2796,13 @@ function resetProfileSettings() {
             emailBtn.disabled = false;
         }
         
-        // Clear form and validation
+        
         const emailInput = document.getElementById('newEmail');
         if (emailInput) emailInput.value = '';
         clearValidationError('newEmail');
     }
     
-    // Reset password section
+    
     if (sections[2]) {
         const passwordSection = sections[2];
         passwordSection.classList.remove('editing', 'success');
@@ -2817,7 +2817,7 @@ function resetProfileSettings() {
             passwordBtn.disabled = false;
         }
         
-        // Clear all password fields and validation
+        
         const currentPasswordInput = document.getElementById('currentPasswordEdit');
         const newPasswordInput = document.getElementById('newPasswordEdit');
         const confirmPasswordInput = document.getElementById('confirmPasswordEdit');
@@ -2832,43 +2832,43 @@ function resetProfileSettings() {
         updatePasswordStrengthEdit('');
     }
     
-    // Reset current display values to original user data
+    
     updateProfileDisplay();
 }
 
-// Update avatar in all places
+
 function updateAvatarUI() {
     const avatar = userSettings.avatar;
     
-    // Update main profile avatar
+    
     const userAvatar = document.getElementById('userAvatar');
     if (userAvatar) userAvatar.textContent = avatar;
     
-    // Update large profile avatar in dropdown
+    
     const profileAvatarLarge = document.getElementById('profileAvatarLarge');
     if (profileAvatarLarge) profileAvatarLarge.textContent = avatar;
     
-    // Update settings avatar
+    
     const settingsAvatar = document.getElementById('settingsAvatar');
     if (settingsAvatar) settingsAvatar.textContent = avatar;
 }
 
-// Update user statistics
+
 function updateUserStats() {
     const totalHabits = habits.length;
     
-    // Підраховуємо виконані сьогодні
+    
     const today = formatDate(new Date());
     let completedToday = 0;
     
     habits.forEach(habit => {
-        // Перевіряємо чи є запис на сьогодні в entries
+        
         if (habit.entries && habit.entries.some(entry => entry.date === today && entry.status === 1)) {
             completedToday++;
         }
     });
     
-    // Знаходимо найдовшу серію серед усіх звичок
+    
     let longestStreak = 0;
     habits.forEach(habit => {
         if (habit.streak && habit.streak.max > longestStreak) {
@@ -2883,12 +2883,12 @@ function updateUserStats() {
     document.getElementById('userStreak').textContent = longestStreak;
 }
 
-// Toggle user profile dropdown
+
 function toggleUserProfile() {
     const dropdown = document.getElementById('userProfileDropdown');
     dropdown.classList.toggle('active');
     
-    // Close on outside click
+    
     if (dropdown.classList.contains('active')) {
         setTimeout(() => {
             document.addEventListener('click', closeProfileOnOutsideClick);
@@ -2906,25 +2906,25 @@ function closeProfileOnOutsideClick(event) {
     }
 }
 
-// Open profile settings modal
+
 function openProfileSettings() {
-    // Close profile dropdown
+    
     document.getElementById('userProfileDropdown').classList.remove('active');
     
-    // Load current settings into form
+    
     loadProfileSettings();
     
-    // Open modal
+    
     openModal('profileSettingsModal');
 }
 
-// Helper function to close user profile dropdown
+
 function closeUserProfileDropdown() {
     document.getElementById('userProfileDropdown').classList.remove('active');
     document.removeEventListener('click', closeProfileOnOutsideClick);
 }
 
-// Export user data
+
 function exportData() {
     closeUserProfileDropdown();
     
@@ -2952,7 +2952,7 @@ function exportData() {
     showSuccess('Данные экспортированы!');
 }
 
-// Import user data
+
 function importData() {
     closeUserProfileDropdown();
     
@@ -2970,12 +2970,12 @@ function importData() {
                 const data = JSON.parse(e.target.result);
                 
                 if (confirm('Импорт данных заменит все текущие данные. Продолжить?')) {
-                    // Import data
+                    
                     if (data.habits) habits = data.habits;
                     if (data.categories) categories = data.categories;
                     if (data.settings) userSettings = { ...userSettings, ...data.settings };
                     
-                    // Save and update
+                    
                     saveCategories();
                     saveUserSettings();
                     updateProfileUI();
@@ -2993,12 +2993,12 @@ function importData() {
     input.click();
 }
 
-// Load current settings into form
+
 function loadProfileSettings() {
-    // Update avatar in settings
+    
     updateAvatarUI();
     
-    // Update toggle switches
+    
     updateToggleSwitch('pushNotifications', userSettings.pushNotifications);
     updateToggleSwitch('emailNotifications', userSettings.emailNotifications);
     updateToggleSwitch('soundNotifications', userSettings.soundNotifications);
@@ -3006,12 +3006,12 @@ function loadProfileSettings() {
     updateToggleSwitch('compactView', userSettings.compactView);
     updateToggleSwitch('analytics', userSettings.analytics);
     
-    // Update select values
+    
     document.getElementById('autoBackup').value = userSettings.autoBackup;
     document.getElementById('interfaceLanguage').value = userSettings.interfaceLanguage;
 }
 
-// Update toggle switch state
+
 function updateToggleSwitch(id, active) {
     const toggle = document.getElementById(id);
     if (active) {
@@ -3021,7 +3021,7 @@ function updateToggleSwitch(id, active) {
     }
 }
 
-// Toggle setting switch
+
 function toggleSetting(settingId) {
     const toggle = document.getElementById(settingId);
     const isActive = toggle.classList.contains('active');
@@ -3038,18 +3038,18 @@ function toggleSetting(settingId) {
     
     console.log('New value:', userSettings[settingId]);
     
-    // Apply setting immediately
+    
     applyUserSettings();
     
-    // Save to localStorage
+    
     saveUserSettings();
 }
 
-// Apply user settings to UI
+
 function applyUserSettings() {
     console.log('Applying settings. darkTheme:', userSettings.darkTheme);
     
-    // Apply theme
+    
     if (userSettings.darkTheme) {
         console.log('Setting dark theme');
         document.body.classList.remove('light-theme');
@@ -3060,7 +3060,7 @@ function applyUserSettings() {
         document.body.classList.add('light-theme');
     }
     
-    // Apply compact view
+    
     if (userSettings.compactView) {
         document.body.classList.add('compact-view');
     } else {
@@ -3068,14 +3068,14 @@ function applyUserSettings() {
     }
 }
 
-// Save user settings
+
 function saveUserSettings() {
     localStorage.setItem('userSettings', JSON.stringify(userSettings));
 }
 
-// Change avatar
+
 function changeAvatar() {
-    // Create avatar picker
+    
     const picker = document.createElement('div');
     picker.className = 'avatar-picker-overlay';
     picker.innerHTML = `
@@ -3099,7 +3099,7 @@ function changeAvatar() {
     setTimeout(() => picker.classList.add('active'), 10);
 }
 
-// Select avatar
+
 function selectAvatar(emoji) {
     userSettings.avatar = emoji;
     updateAvatarUI();
@@ -3108,7 +3108,7 @@ function selectAvatar(emoji) {
     showSuccess('Аватар обновлен!');
 }
 
-// Close avatar picker
+
 function closeAvatarPicker() {
     const picker = document.querySelector('.avatar-picker-overlay');
     if (picker) {
@@ -3117,7 +3117,7 @@ function closeAvatarPicker() {
     }
 }
 
-// Save profile settings
+
 async function saveProfileSettings() {
     const username = document.getElementById('settingsUsername').value.trim();
     const email = document.getElementById('settingsEmail').value.trim();
@@ -3127,19 +3127,19 @@ async function saveProfileSettings() {
         return;
     }
     
-    // Update select values
+    
     userSettings.autoBackup = document.getElementById('autoBackup').value;
     userSettings.interfaceLanguage = document.getElementById('interfaceLanguage').value;
     
     try {
-        // TODO: Send to API
-        // const response = await fetch(`${API_BASE}/profile`, {
-        //     method: 'PUT',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ username, email, settings: userSettings })
-        // });
         
-        // For now, just update locally
+        
+        
+        
+        
+        
+        
+        
         if (currentUser) {
             currentUser.username = username;
             currentUser.email = email;
@@ -3155,7 +3155,7 @@ async function saveProfileSettings() {
     }
 }
 
-// Clear all data
+
 function clearAllData() {
     if (confirm('Вы уверены, что хотите удалить все данные? Это действие нельзя отменить.')) {
         if (confirm('Последнее предупреждение! Все ваши привычки и данные будут удалены.')) {
@@ -3173,12 +3173,12 @@ function clearAllData() {
                 interfaceLanguage: 'ru'
             };
             
-            // Clear localStorage
+            
             localStorage.removeItem('habits');
             localStorage.removeItem('habitCategories');
             localStorage.removeItem('userSettings');
             
-            // Update UI
+            
             saveCategories();
             saveUserSettings();
             updateProfileUI();
@@ -3190,11 +3190,11 @@ function clearAllData() {
     }
 }
 
-// Delete account
+
 function deleteAccount() {
     if (confirm('Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить.')) {
         if (confirm('Введите "DELETE" для подтверждения удаления аккаунта:') === 'DELETE') {
-            // TODO: Call API to delete account
+            
             logout();
             clearAllData();
             showSuccess('Аккаунт удален');
@@ -3202,48 +3202,48 @@ function deleteAccount() {
     }
 }
 
-// Add click event to user info
+
 document.addEventListener('DOMContentLoaded', function() {
     const userInfo = document.getElementById('userInfo');
     if (userInfo) {
         userInfo.addEventListener('click', toggleUserProfile);
     }
     
-    // Initialize profile
+    
     initUserProfile();
 });
 
-// ==================== ADVANCED PROFILE VALIDATION ====================
 
-// Profile editing state
+
+
 let editingStates = {
     username: false,
     email: false,
     password: false
 };
 
-// Update profile display values
+
 function updateProfileDisplay() {
     if (currentUser) {
-        // Update username in profile modal
+        
         const currentUsernameEl = document.getElementById('currentUsername');
         if (currentUsernameEl) {
             currentUsernameEl.textContent = currentUser.username;
         }
         
-        // Update email in profile modal
+        
         const currentEmailEl = document.getElementById('currentEmail');
         if (currentEmailEl) {
             currentEmailEl.textContent = currentUser.email;
         }
         
-        // Update main user name in header
+        
         const userNameEl = document.getElementById('userName');
         if (userNameEl) {
             userNameEl.textContent = currentUser.username;
         }
         
-        // Update profile name in dropdown
+        
         const profileNameEl = document.getElementById('profileName');
         if (profileNameEl) {
             profileNameEl.textContent = currentUser.username;
@@ -3251,7 +3251,7 @@ function updateProfileDisplay() {
     }
 }
 
-// Toggle username editing
+
 function toggleUsernameEdit() {
     const section = document.querySelector('.profile-edit-section');
     const display = document.getElementById('usernameDisplay');
@@ -3266,7 +3266,7 @@ function toggleUsernameEdit() {
         btn.textContent = 'Редактирование...';
         btn.disabled = true;
         
-        // Set current value
+        
         document.getElementById('newUsername').value = currentUser?.username || '';
     }
 }
@@ -3284,7 +3284,7 @@ function cancelUsernameEdit() {
     btn.textContent = 'Изменить';
     btn.disabled = false;
     
-    // Clear form
+    
     document.getElementById('newUsername').value = '';
     clearValidationError('newUsername');
 }
@@ -3297,25 +3297,25 @@ async function saveUsername() {
     const newUsername = document.getElementById('newUsername').value.trim();
     
     try {
-        // TODO: API call
-        // const response = await fetch(`${API_BASE}/profile/username`, {
-        //     method: 'PUT',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ username: newUsername })
-        // });
         
-        // Update locally for now
+        
+        
+        
+        
+        
+        
+        
         if (currentUser) {
             currentUser.username = newUsername;
-            // Save to localStorage
+            
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
         }
         
         updateProfileDisplay();
         updateAvatarUI();
-        updateProfileUI(); // Full UI update
+        updateProfileUI(); 
         
-        // Show success state
+        
         const section = document.querySelector('.profile-edit-section');
         section.classList.add('success');
         setTimeout(() => section.classList.remove('success'), 3000);
@@ -3328,10 +3328,10 @@ async function saveUsername() {
     }
 }
 
-// Toggle email editing
+
 function toggleEmailEdit() {
     const sections = document.querySelectorAll('.profile-edit-section');
-    const section = sections[1]; // Second section is email
+    const section = sections[1]; 
     const display = document.getElementById('emailDisplay');
     const form = document.getElementById('emailEditForm');
     const btn = document.getElementById('editEmailBtn');
@@ -3344,7 +3344,7 @@ function toggleEmailEdit() {
         btn.textContent = 'Редактирование...';
         btn.disabled = true;
         
-        // Set current value
+        
         document.getElementById('newEmail').value = currentUser?.email || '';
     }
 }
@@ -3363,7 +3363,7 @@ function cancelEmailEdit() {
     btn.textContent = 'Изменить';
     btn.disabled = false;
     
-    // Clear form
+    
     document.getElementById('newEmail').value = '';
     clearValidationError('newEmail');
 }
@@ -3376,24 +3376,24 @@ async function saveEmail() {
     const newEmail = document.getElementById('newEmail').value.trim();
     
     try {
-        // TODO: API call
-        // const response = await fetch(`${API_BASE}/profile/email`, {
-        //     method: 'PUT',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ email: newEmail })
-        // });
         
-        // Update locally for now
+        
+        
+        
+        
+        
+        
+        
         if (currentUser) {
             currentUser.email = newEmail;
-            // Save to localStorage
+            
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
         }
         
         updateProfileDisplay();
         updateProfileUI();
         
-        // Show success state
+        
         const sections = document.querySelectorAll('.profile-edit-section');
         const section = sections[1];
         section.classList.add('success');
@@ -3407,10 +3407,10 @@ async function saveEmail() {
     }
 }
 
-// Toggle password editing
+
 function togglePasswordEdit() {
     const sections = document.querySelectorAll('.profile-edit-section');
-    const section = sections[2]; // Third section is password
+    const section = sections[2]; 
     const display = document.getElementById('passwordDisplay');
     const form = document.getElementById('passwordEditForm');
     const btn = document.getElementById('editPasswordBtn');
@@ -3439,7 +3439,7 @@ function cancelPasswordEdit() {
     btn.textContent = 'Изменить';
     btn.disabled = false;
     
-    // Clear all password fields
+    
     document.getElementById('currentPasswordEdit').value = '';
     document.getElementById('newPasswordEdit').value = '';
     document.getElementById('confirmPasswordEdit').value = '';
@@ -3463,14 +3463,14 @@ async function savePassword() {
     const newPassword = document.getElementById('newPasswordEdit').value;
     
     try {
-        // TODO: API call
-        // const response = await fetch(`${API_BASE}/profile/password`, {
-        //     method: 'PUT',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ currentPassword, newPassword })
-        // });
         
-        // Show success state
+        
+        
+        
+        
+        
+        
+        
         const sections = document.querySelectorAll('.profile-edit-section');
         const section = sections[2];
         section.classList.add('success');
@@ -3484,7 +3484,7 @@ async function savePassword() {
     }
 }
 
-// Toggle password visibility
+
 function togglePasswordVisibility(inputId) {
     const input = document.getElementById(inputId);
     const toggle = input.nextElementSibling;
@@ -3499,7 +3499,7 @@ function togglePasswordVisibility(inputId) {
     }
 }
 
-// Clear validation error
+
 function clearValidationError(inputId) {
     const input = document.getElementById(inputId);
     const validation = document.getElementById(inputId + 'Validation');
@@ -3511,7 +3511,7 @@ function clearValidationError(inputId) {
     }
 }
 
-// Show validation message
+
 function showValidationMessage(inputId, message, isError = true) {
     const input = document.getElementById(inputId);
     const validation = document.getElementById(inputId + 'Validation');
@@ -3526,12 +3526,12 @@ function showValidationMessage(inputId, message, isError = true) {
     input.classList.toggle('valid', !isError);
 }
 
-// Show validation error (wrapper for compatibility)
+
 function showValidationError(inputId, message) {
     showValidationMessage(inputId, message, true);
 }
 
-// Validate username
+
 function validateUsername() {
     const input = document.getElementById('settingsUsername');
     const username = input.value.trim();
@@ -3560,7 +3560,7 @@ function validateUsername() {
     return true;
 }
 
-// Validate email
+
 function validateEmail() {
     const input = document.getElementById('settingsEmail');
     const email = input.value.trim();
@@ -3580,7 +3580,7 @@ function validateEmail() {
     return true;
 }
 
-// Validate current password
+
 async function validateCurrentPassword() {
     const input = document.getElementById('currentPassword');
     const password = input.value;
@@ -3590,34 +3590,34 @@ async function validateCurrentPassword() {
         return false;
     }
     
-    // TODO: Check with API
-    // For now, just check if it's not empty
+    
+    
     showValidationMessage('currentPassword', '✓ Пароль принят', false);
     return true;
 }
 
-// Check password strength
+
 function checkPasswordStrength(password) {
     let score = 0;
     let feedback = [];
     
-    // Length check
+    
     if (password.length >= 8) score++;
     else feedback.push('минимум 8 символов');
     
-    // Uppercase check
+    
     if (/[A-Z]/.test(password)) score++;
     else feedback.push('заглавная буква');
     
-    // Lowercase check
+    
     if (/[a-z]/.test(password)) score++;
     else feedback.push('строчная буква');
     
-    // Number check
+    
     if (/\d/.test(password)) score++;
     else feedback.push('цифра');
     
-    // Special character check
+    
     if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
     else feedback.push('спецсимвол');
     

@@ -13,7 +13,7 @@
         <header>
             <h1 data-i18n="appTitle">🎯 Трекер звичок</h1>
             
-            <!-- Індикатор статусу підключення -->
+            
             <div id="connectionStatus" class="connection-status offline">
                 <span class="status-icon">🔴</span>
                 <span class="status-text" data-i18n="offline"></span>
@@ -48,7 +48,7 @@
                     </div>
                     <div class="user-dropdown-arrow">▼</div>
                     
-                    <!-- User Profile Dropdown -->
+                    
                     <div class="user-profile-dropdown" id="userProfileDropdown">
                         <div class="profile-header">
                             <div class="profile-avatar-large">
@@ -134,7 +134,7 @@
         </main>
     </div>
 
-    <!-- Modal: Add Habit -->
+    
     <div class="modal-overlay" id="addHabitModal">
         <div class="modal">
             <div class="modal-header">
@@ -262,7 +262,7 @@
                     <div class="category-selector">
                         <input type="text" class="form-input" id="habitCategory" data-i18n-placeholder="selectCategory" placeholder="Оберіть категорію" readonly onclick="toggleCategoryDropdown()">
                         <div class="category-dropdown" id="categoryDropdown">
-                            <!-- Categories will be populated here -->
+                            
                         </div>
                     </div>
                 </div>
@@ -279,7 +279,7 @@
         </div>
     </div>
 
-    <!-- Modal: Edit Habit -->
+    
     <div class="modal-overlay" id="editHabitModal">
         <div class="modal">
             <div class="modal-header">
@@ -413,7 +413,7 @@
                     <div class="category-selector">
                         <input type="text" class="form-input" id="editHabitCategory" data-i18n-placeholder="selectCategory" placeholder="Оберіть категорію" readonly onclick="toggleEditCategoryDropdown()">
                         <div class="category-dropdown" id="editCategoryDropdown">
-                            <!-- Categories will be populated here -->
+                            
                         </div>
                     </div>
                 </div>
@@ -430,7 +430,7 @@
         </div>
     </div>
 
-    <!-- Modal: Categories -->
+    
     <div class="modal-overlay" id="categoriesModal">
         <div class="modal">
             <div class="modal-header">
@@ -439,7 +439,7 @@
             </div>
             
             <div class="categories-list" id="categoriesList">
-                <!-- Categories will be populated here -->
+                
             </div>
             
             <div class="modal-actions">
@@ -450,7 +450,7 @@
         </div>
     </div>
 
-    <!-- Modal: Add Category -->
+    
     <div class="modal-overlay" id="addCategoryModal">
         <div class="modal">
             <div class="modal-header">
@@ -481,7 +481,7 @@
         </div>
     </div>
 
-    <!-- Modal: Auth (Login/Register) -->
+    
     <div class="modal-overlay" id="authModal">
         <div class="modal">
             <div class="modal-header">
@@ -489,7 +489,7 @@
                 <button class="modal-close" onclick="closeModal('authModal')">&times;</button>
             </div>
             
-            <!-- Login Form -->
+            
             <form id="loginForm" style="display: block;">
                 <div class="form-group">
                     <label class="form-label">Email</label>
@@ -524,7 +524,7 @@
                 </div>
             </form>
             
-            <!-- Register Form -->
+            
             <form id="registerForm" style="display: none;">
                 <div class="form-group">
                     <label class="form-label">Имя пользователя</label>
@@ -558,7 +558,7 @@
         </div>
     </div>
 
-    <!-- Modal: Profile Settings -->
+    
     <div class="modal-overlay profile-settings-modal" id="profileSettingsModal">
         <div class="modal">
             <div class="modal-header">
@@ -823,39 +823,39 @@
             
             <div class="modal-actions">
                 <button type="button" class="btn" onclick="closeModal('profileSettingsModal')">
-                    ✓ Закрыть настройки
+                    ✓ Закрити налаштування
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Awards Modal -->
+    
     <div class="modal-overlay" id="awardsModal">
         <div class="modal">
             <div class="modal-header">
-                <h2>🏆 Награды и достижения</h2>
+                <h2>🏆 Нагороди та досягнення</h2>
                 <button class="modal-close" onclick="closeModal('awardsModal')">&times;</button>
             </div>
             
             <div class="modal-content">
                 <div class="awards-section">
-                    <h3>📊 Ваш прогресс</h3>
+                    <h3>📊 Ваш прогрес</h3>
                     <div class="progress-overview">
                         <div class="progress-item">
-                            <span class="progress-label">Общий опыт</span>
+                            <span class="progress-label">Загальний досвід</span>
                             <span class="progress-value" id="totalXP">0 XP</span>
                         </div>
                         <div class="progress-item">
-                            <span class="progress-label">Текущий уровень</span>
-                            <span class="progress-value" id="currentLevelText">Новичок (1)</span>
+                            <span class="progress-label">Поточний рівень</span>
+                            <span class="progress-value" id="currentLevelText">Новачок (1)</span>
                         </div>
                         <div class="progress-item">
-                            <span class="progress-label">Привычек выполнено</span>
+                            <span class="progress-label">Звичок виконано</span>
                             <span class="progress-value" id="totalCompleted">0</span>
                         </div>
                         <div class="progress-item">
-                            <span class="progress-label">Самая длинная серия</span>
-                            <span class="progress-value" id="bestStreak">0 дней</span>
+                            <span class="progress-label">Найдовша серія</span>
+                            <span class="progress-value" id="bestStreak">0 днів</span>
                         </div>
                     </div>
                 </div>
@@ -863,14 +863,14 @@
                 <div class="awards-section">
                     <h3>🎖️ Полученные бейджи</h3>
                     <div class="badges-grid" id="earnedBadges">
-                        <!-- Earned badges will be populated here -->
+                        
                     </div>
                 </div>
                 
                 <div class="awards-section">
                     <h3>🔒 Доступные бейджи</h3>
                     <div class="badges-grid" id="availableBadges">
-                        <!-- Available badges will be populated here -->
+                        
                     </div>
                 </div>
             </div>

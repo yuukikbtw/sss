@@ -1,7 +1,7 @@
-// 🌍 Internationalization - Інтернаціоналізація
+
 const translations = {
     uk: {
-        // ========== CATEGORIES ==========
+        
         sport: 'Спорт',
         health: 'Здоров\'я',
         work: 'Робота',
@@ -17,12 +17,12 @@ const translations = {
         emojiOptional: 'Емодзі (опціонально)',
         defaultCategory: '(за замовчуванням)',
         
-        // ========== HEADER ==========
+        
         appTitle: '🎯 Трекер звичок',
         online: 'В мережі',
         offline: 'Не в мережі',
         
-        // ========== USER INFO ==========
+        
         userDefaultName: 'Користувач',
         beginner: 'Новачок',
         trainee: 'Стажер',
@@ -36,7 +36,7 @@ const translations = {
         divine: 'Божественний',
         lvl: 'Рівень',
         
-        // ========== AUTH ==========
+        
         login: 'Увійти',
         register: 'Реєстрація',
         logout: 'Вийти',
@@ -49,7 +49,7 @@ const translations = {
         switchToLogin: 'Переключитися на вхід',
         switchToRegister: 'Переключитися на реєстрацію',
         
-        // ========== NAVIGATION ==========
+        
         myHabits: '📋 Мої звички',
         statistics: '📊 Статистика',
         addHabit: '➕ Додати звичку',
@@ -58,14 +58,14 @@ const translations = {
         settings: '⚙️ Налаштування',
         profile: 'Профіль',
         
-        // ========== MODAL TITLES ==========
+        
         addHabitTitle: 'Додати звичку',
         editHabitTitle: 'Редагувати звичку',
         manageCategoriesTitle: 'Управління категоріями',
         addCategoryTitle: 'Додати категорію',
         profileSettingsTitle: '⚙️ Налаштування профілю',
         
-        // ========== HABIT FORM ==========
+        
         habitName: 'Назва звички',
         habitNamePlaceholder: 'Наприклад: Ранкова зарядка',
         description: 'Опис',
@@ -96,7 +96,7 @@ const translations = {
         hour: 'годин',
         day: 'днів',
         
-        // ========== TIME SETTINGS ==========
+        
         anytime: 'Будь-коли',
         specificTime: 'Конкретний час',
         timeRange: 'Проміжок часу',
@@ -110,7 +110,7 @@ const translations = {
         hours: 'годин',
         minutes: 'хвилин',
         
-        // ========== REMINDER TYPES ==========
+        
         reminderNone: 'Без нагадування',
         reminderNoneDesc: 'Виконувати звичку без нагадувань',
         reminderOnce: 'Один раз на день',
@@ -120,7 +120,7 @@ const translations = {
         reminderMultiple: 'Декілька разів',
         reminderMultipleDesc: 'Нагадування у вибрані часи',
         
-        // ========== CATEGORIES ==========
+        
         sport: 'Спорт',
         health: "Здоров'я",
         work: 'Робота',
@@ -132,7 +132,7 @@ const translations = {
         mindfulness: 'Усвідомленість',
         creativity: 'Творчість',
         
-        // ========== ACTIONS ==========
+        
         save: 'Зберегти',
         cancel: 'Скасувати',
         delete: 'Видалити',
@@ -142,7 +142,7 @@ const translations = {
         apply: 'Застосувати',
         confirm: 'Підтвердити',
         
-        // ========== MESSAGES ==========
+        
         habitAdded: 'Звичку додано!',
         habitUpdated: 'Звичку оновлено!',
         habitDeleted: 'Звичку видалено!',
@@ -156,7 +156,7 @@ const translations = {
         loadingError: 'Помилка завантаження звичок',
         networkError: 'Помилка мережі',
         
-        // ========== STATS ==========
+        
         currentStreak: 'Поточна серія',
         longestStreak: 'Найдовша серія',
         completionRate: 'Відсоток виконання',
@@ -167,7 +167,7 @@ const translations = {
         monthStats: 'Статистика за місяць',
         allTimeStats: 'Вся статистика',
         
-        // ========== CALENDAR ==========
+        
         monday: 'Пн',
         tuesday: 'Вт',
         wednesday: 'Ср',
@@ -182,7 +182,7 @@ const translations = {
         clickDayToMark: 'Клікніть на день, щоб відмітити виконання',
         clickToMarkCompletion: 'Клікніть, щоб відмітити виконання',
         
-        // ========== STATS ==========
+        
         currentStreak: 'Поточна серія',
         bestStreak: 'Найкраща серія',
         week: 'Тиждень',
@@ -191,15 +191,15 @@ const translations = {
         monthPercent: 'Місяць %',
         days: 'днів',
         
-        // ========== EMPTY STATES ==========
+        
         noHabits: 'Немає звичок',
         noHabitsDesc: 'Додайте першу звичку, щоб почати відстеження',
-        selectHabit: 'Оберіть звичку',
+    selectHabit: 'Виберіть звичку',
         selectHabitDesc: 'Клікніть на звичку зліва, щоб побачити статистику',
         loadingHabits: 'Завантаження звичок...',
         noCategories: 'Немає категорій',
         
-        // ========== BADGES ==========
+        
         firstStep: 'Перший крок',
         firstStepDesc: 'Виконати першу звичку',
         weekWarrior: 'Тижневий воїн',
@@ -221,7 +221,7 @@ const translations = {
         nightOwl: 'Сова',
         nightOwlDesc: 'Виконати 20 звичок після 22:00',
         
-        // ========== PROFILE SETTINGS ==========
+        
         profileSettings: 'Налаштування профілю',
         profile: 'Профіль',
         manageCategoriesTitle: 'Управління категоріями',
@@ -286,14 +286,14 @@ const translations = {
         deleteAccount: 'Видалити акаунт',
         dangerZone: 'Небезпечна зона',
         
-        // ========== AWARDS MODAL ==========
+        
         myAwards: 'Мої нагороди',
         earnedBadges: 'Отримані значки',
         lockedBadges: 'Заблоковані значки',
         noAwards: 'Поки немає нагород',
         keepGoing: 'Продовжуйте виконувати звички!',
         
-        // ========== OTHER ==========
+        
         loading: 'Завантаження...',
         saving: 'Збереження...',
         deleting: 'Видалення...',
@@ -307,7 +307,7 @@ const translations = {
     },
     
     en: {
-        // ========== CATEGORIES ==========
+        
         sport: 'Sport',
         health: 'Health',
         work: 'Work',
@@ -323,12 +323,12 @@ const translations = {
         emojiOptional: 'Emoji (optional)',
         defaultCategory: '(default)',
         
-        // ========== HEADER ==========
+        
         appTitle: '🎯 Habit Tracker',
         online: 'Online',
         offline: 'Offline',
         
-        // ========== USER INFO ==========
+        
         userDefaultName: 'User',
         beginner: 'Beginner',
         trainee: 'Trainee',
@@ -342,7 +342,7 @@ const translations = {
         divine: 'Divine',
         lvl: 'Level',
         
-        // ========== AUTH ==========
+        
         login: 'Login',
         register: 'Register',
         logout: 'Logout',
@@ -355,7 +355,7 @@ const translations = {
         switchToLogin: 'Switch to login',
         switchToRegister: 'Switch to register',
         
-        // ========== NAVIGATION ==========
+        
         myHabits: '📋 My Habits',
         statistics: '📊 Statistics',
         addHabit: '➕ Add Habit',
@@ -364,14 +364,14 @@ const translations = {
         settings: '⚙️ Settings',
         profile: 'Profile',
         
-        // ========== MODAL TITLES ==========
+        
         addHabitTitle: 'Add Habit',
         editHabitTitle: 'Edit Habit',
         manageCategoriesTitle: 'Manage Categories',
         addCategoryTitle: 'Add Category',
         profileSettingsTitle: '⚙️ Profile Settings',
         
-        // ========== HABIT FORM ==========
+        
         habitName: 'Habit Name',
         habitNamePlaceholder: 'E.g.: Morning Exercise',
         description: 'Description',
@@ -402,7 +402,7 @@ const translations = {
         hour: 'hours',
         day: 'days',
         
-        // ========== TIME SETTINGS ==========
+        
         anytime: 'Anytime',
         specificTime: 'Specific time',
         timeRange: 'Time range',
@@ -416,7 +416,7 @@ const translations = {
         hours: 'hours',
         minutes: 'minutes',
         
-        // ========== REMINDER TYPES ==========
+        
         reminderNone: 'No reminder',
         reminderNoneDesc: 'Complete habit without reminders',
         reminderOnce: 'Once a day',
@@ -426,7 +426,7 @@ const translations = {
         reminderMultiple: 'Multiple times',
         reminderMultipleDesc: 'Reminders at selected times',
         
-        // ========== CATEGORIES ==========
+        
         sport: 'Sport',
         health: 'Health',
         work: 'Work',
@@ -438,7 +438,7 @@ const translations = {
         mindfulness: 'Mindfulness',
         creativity: 'Creativity',
         
-        // ========== ACTIONS ==========
+        
         save: 'Save',
         cancel: 'Cancel',
         delete: 'Delete',
@@ -448,7 +448,7 @@ const translations = {
         apply: 'Apply',
         confirm: 'Confirm',
         
-        // ========== MESSAGES ==========
+        
         habitAdded: 'Habit added!',
         habitUpdated: 'Habit updated!',
         habitDeleted: 'Habit deleted!',
@@ -462,7 +462,7 @@ const translations = {
         loadingError: 'Error loading habits',
         networkError: 'Network error',
         
-        // ========== STATS ==========
+        
         currentStreak: 'Current Streak',
         longestStreak: 'Longest Streak',
         completionRate: 'Completion Rate',
@@ -473,7 +473,7 @@ const translations = {
         monthStats: 'Month Statistics',
         allTimeStats: 'All Time Statistics',
         
-        // ========== CALENDAR ==========
+        
         monday: 'Mon',
         tuesday: 'Tue',
         wednesday: 'Wed',
@@ -488,7 +488,7 @@ const translations = {
         clickDayToMark: 'Click on a day to mark completion',
         clickToMarkCompletion: 'Click to mark completion',
         
-        // ========== STATS ==========
+        
         currentStreak: 'Current Streak',
         bestStreak: 'Best Streak',
         week: 'Week',
@@ -496,7 +496,7 @@ const translations = {
         weekPercent: 'Week %',
         monthPercent: 'Month %',
         
-        // ========== EMPTY STATES ==========
+        
         noHabits: 'No habits',
         noHabitsDesc: 'Add your first habit to start tracking',
         selectHabit: 'Select a habit',
@@ -504,7 +504,7 @@ const translations = {
         loadingHabits: 'Loading habits...',
         noCategories: 'No categories',
         
-        // ========== BADGES ==========
+        
         firstStep: 'First Step',
         firstStepDesc: 'Complete first habit',
         weekWarrior: 'Week Warrior',
@@ -526,7 +526,7 @@ const translations = {
         nightOwl: 'Night Owl',
         nightOwlDesc: 'Complete 20 habits after 22:00',
         
-        // ========== PROFILE SETTINGS ==========
+        
         profileSettings: 'Profile Settings',
         profile: 'Profile',
         manageCategoriesTitle: 'Manage Categories',
@@ -591,14 +591,14 @@ const translations = {
         deleteAccount: 'Delete account',
         dangerZone: 'Danger Zone',
         
-        // ========== AWARDS MODAL ==========
+        
         myAwards: 'My Awards',
         earnedBadges: 'Earned Badges',
         lockedBadges: 'Locked Badges',
         noAwards: 'No awards yet',
         keepGoing: 'Keep completing habits!',
         
-        // ========== OTHER ==========
+        
         loading: 'Loading...',
         saving: 'Saving...',
         deleting: 'Deleting...',
@@ -612,26 +612,26 @@ const translations = {
     }
 };
 
-// Текущий язык (по умолчанию украинский)
+
 let currentLang = localStorage.getItem('language') || 'uk';
 
-// Функция получения перевода
+
 function t(key) {
     return translations[currentLang]?.[key] || key;
 }
 
-// Функция переключения языка
+
 function setLanguage(lang) {
     if (translations[lang]) {
         currentLang = lang;
         localStorage.setItem('language', lang);
         document.documentElement.lang = lang;
         
-        // Обновляем select в настройках профиля
+        
         const langSelect = document.getElementById('interfaceLanguage');
         if (langSelect) langSelect.value = lang;
         
-        // Перезагружаем категории и уровни с новыми переводами
+        
         if (typeof getDefaultCategories === 'function') {
             categories = getDefaultCategories();
         }
@@ -655,13 +655,13 @@ function setLanguage(lang) {
     }
 }
 
-// Обновление всех текстов на странице
+
 function updateAllTexts() {
-    // Обновляем все элементы с data-i18n
+    
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         
-        // Пропускаем элементы с пользовательскими данными
+        
         if (el.id === 'profileName' || el.classList.contains('user-data')) {
             return;
         }
@@ -677,29 +677,29 @@ function updateAllTexts() {
         }
     });
     
-    // Обновляем placeholder атрибуты
+    
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
         el.placeholder = t(key);
     });
     
-    // Обновляем title атрибуты
+    
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const key = el.getAttribute('data-i18n-title');
         el.title = t(key);
     });
     
-    // Обновляем value для кнопок
+    
     document.querySelectorAll('[data-i18n-value]').forEach(el => {
         const key = el.getAttribute('data-i18n-value');
         el.value = t(key);
     });
 }
 
-// Функция для замены текстов в сообщениях
+
 function showSuccess(messageKey) {
     const message = t(messageKey) || messageKey;
-    // Используем существующую функцию показа уведомлений
+    
     const notification = document.createElement('div');
     notification.className = 'notification success';
     notification.textContent = message;
@@ -716,10 +716,10 @@ function showError(messageKey) {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Инициализация при загрузке
+
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {
-        // Установить выбранный язык в select
+        
         const langSelect = document.getElementById('interfaceLanguage');
         if (langSelect) langSelect.value = currentLang;
         

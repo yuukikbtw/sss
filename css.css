@@ -72,7 +72,7 @@ body {
     width: 100%;
 }
 
-/* Header */
+
 header {
     display: flex;
     justify-content: space-between;
@@ -85,7 +85,7 @@ header {
     width: 100%;
 }
 
-/* Connection Status Indicator */
+
 .connection-status {
     position: absolute;
     top: 10px;
@@ -124,7 +124,7 @@ header {
     50% { opacity: 0.5; }
 }
 
-/* Language Switcher */
+
 .language-switcher {
     display: flex;
     gap: 8px;
@@ -183,7 +183,7 @@ header h1::after {
     flex-wrap: wrap;
 }
 
-/* App buttons styling */
+
 #appButtons {
     display: flex;
     gap: 24px;
@@ -203,13 +203,13 @@ header h1::after {
     min-width: 160px;
 }
 
-/* User info in app buttons */
+
 #appButtons #userInfo {
     position: relative;
     margin-left: 16px;
 }
 
-/* Buttons */
+
 .btn {
     position: relative;
     display: inline-flex;
@@ -288,7 +288,7 @@ header h1::after {
     color: var(--accent-secondary);
 }
 
-/* Glass Morphism Modal */
+
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -365,7 +365,7 @@ header h1::after {
     transform: scale(1.05);
 }
 
-/* Advanced Form Styling */
+
 .form-group {
     margin-bottom: 20px;
 }
@@ -408,7 +408,7 @@ header h1::after {
     font-family: inherit;
 }
 
-/* Time Selection with Neumorphism */
+
 .time-selector {
     background: var(--surface);
     border: 1px solid var(--border-subtle);
@@ -483,7 +483,7 @@ header h1::after {
     min-width: 120px;
 }
 
-/* Advanced Category Selector */
+
 .category-selector {
     position: relative;
 }
@@ -522,7 +522,7 @@ header h1::after {
     margin-top: 4px;
     max-height: 280px;
     overflow-y: auto;
-    z-index: 9999; /* Увеличиваем z-index чтобы был поверх модалки */
+    z-index: 9999; 
     display: none;
     box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0, 212, 255, 0.1);
 }
@@ -586,7 +586,7 @@ header h1::after {
     background: rgba(0, 212, 255, 0.1);
 }
 
-/* Time Selector */
+
 .time-selector {
     position: relative;
 }
@@ -719,7 +719,7 @@ header h1::after {
     font-size: 14px;
 }
 
-/* Reminder Selector */
+
 .reminder-selector {
     position: relative;
 }
@@ -825,7 +825,7 @@ header h1::after {
     color: var(--text-inverse);
 }
 
-/* Reminder Settings */
+
 .reminder-settings {
     margin-top: 16px;
     padding: 16px;
@@ -859,7 +859,7 @@ header h1::after {
     pointer-events: none;
 }
 
-/* Interval Selector */
+
 .interval-selector {
     display: flex;
     flex-direction: column;
@@ -964,7 +964,7 @@ header h1::after {
 }
 
 
-/* Modal Actions */
+
 .modal {
     background: var(--surface-glass);
     backdrop-filter: blur(40px);
@@ -978,7 +978,7 @@ header h1::after {
     box-shadow: var(--shadow-lg), var(--shadow-glow);
     transform: scale(0.95) translateY(20px);
     transition: all var(--animation-normal);
-    z-index: 1001; /* Меньше чем у dropdown */
+    z-index: 1001; 
 }
 
 .modal-actions {
@@ -992,7 +992,7 @@ header h1::after {
     z-index: 1;
 }
 
-/* Categories List */
+
 .categories-list {
     display: grid;
     gap: 12px;
@@ -1033,7 +1033,7 @@ header h1::after {
     color: inherit;
 }
 
-/* Main Layout with Bento Grid */
+
 main {
     display: grid;
     gap: 32px;
@@ -1068,7 +1068,7 @@ main {
     letter-spacing: -0.01em;
 }
 
-/* Habits List with Cards */
+
 .habits-list {
     display: flex;
     flex-direction: column;
@@ -1182,7 +1182,7 @@ main {
     color: white;
 }
 
-/* Interactive Week Grid */
+
 .week-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -1252,7 +1252,7 @@ main {
     box-shadow: 0 0 0 2px var(--accent-primary);
 }
 
-/* Advanced Stats Panel */
+
 .stats-grid {
     display: grid;
     gap: 16px;
@@ -1327,7 +1327,7 @@ main {
     font-weight: 600;
 }
 
-/* Loading and Empty States */
+
 .loading {
     text-align: center;
     padding: 60px 24px;
@@ -1349,7 +1349,7 @@ main {
     color: var(--text-primary);
 }
 
-/* Messages */
+
 .error, .success, .info {
     padding: 16px 20px;
     border-radius: var(--radius-md);
@@ -1377,7 +1377,7 @@ main {
     color: #7dd3fc;
 }
 
-/* Responsive Design */
+
 @media (max-width: 768px) {
     .container {
         padding: 12px;
@@ -1506,14 +1506,14 @@ main {
         font-size: 0.95rem;
     }
     
-    /* Кнопки добавления привычки */
+    
     .add-habit-btn {
         width: 100%;
         padding: 16px;
         font-size: 1rem;
     }
     
-    /* Категории */
+    
     .categories-grid {
         gap: 8px;
         grid-template-columns: 1fr;
@@ -1525,7 +1525,7 @@ main {
         justify-content: flex-start;
     }
     
-    /* Формы */
+    
     .form-group {
         margin-bottom: 16px;
     }
@@ -1536,14 +1536,14 @@ main {
         font-size: 1rem;
     }
     
-    /* Иконки кнопки */
+    
     .icon-btn {
         min-width: 40px;
         min-height: 40px;
         padding: 8px;
     }
     
-    /* Статистика */
+    
     .stats-grid {
         grid-template-columns: 1fr;
         gap: 12px;
@@ -1554,7 +1554,7 @@ main {
     }
 }
 
-/* Custom Scrollbar */
+
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -1573,13 +1573,13 @@ main {
     background: var(--accent-primary);
 }
 
-/* Focus Styles */
+
 *:focus-visible {
     outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
 }
 
-/* Адаптивность для маленьких мобильных */
+
 @media (max-width: 480px) {
     .container {
         padding: 8px;
@@ -1675,7 +1675,7 @@ main {
     
     .form-input,
     .form-textarea {
-        font-size: 16px; /* Предотвращает зум на iOS */
+        font-size: 16px; 
     }
     
     .icon-btn {
@@ -1691,7 +1691,7 @@ main {
         padding: 12px;
     }
     
-    /* Убираем hover эффекты на тач-устройствах */
+    
     .habit-card:hover {
         transform: none;
     }
@@ -1701,7 +1701,7 @@ main {
     }
 }
 
-/* Средние планшеты */
+
 @media (min-width: 481px) and (max-width: 768px) {
     .week-grid {
         gap: 6px;
@@ -1713,7 +1713,7 @@ main {
     }
 }
 
-/* Reduced Motion */
+
 @media (prefers-reduced-motion: reduce) {
     * {
         animation-duration: 0.01ms !important;
@@ -1722,18 +1722,18 @@ main {
     }
     }
 
-    /* Touch targets */
+    
     .day-cell, .icon-btn, .category-option {
         min-height: 44px;
         min-width: 44px;
     }
 
-    /* Swipe gestures support */
+    
     .habit-card {
         touch-action: pan-y;
     }
 
-/* Remember me checkbox */
+
 .remember-me {
     display: flex;
     align-items: center;
@@ -1788,7 +1788,7 @@ main {
     display: block;
 }
 
-/* Reminder options styling */
+
 .reminder-options {
     display: flex;
     flex-direction: column;
@@ -1836,7 +1836,7 @@ main {
     flex: none;
 }
 
-/* Notification styling */
+
 .notification-permission {
     background: var(--surface-glass);
     border: 1px solid var(--border-accent);
@@ -1850,7 +1850,7 @@ main {
     margin-top: 12px;
 }
 
-/* User Profile Styles */
+
 #userInfo {
     display: flex !important;
     align-items: center;
@@ -1940,7 +1940,7 @@ main {
     transform: rotate(180deg);
 }
 
-/* User Profile Dropdown */
+
 .user-profile-dropdown {
     position: absolute;
     top: 100%;
@@ -2091,7 +2091,7 @@ main {
     text-align: center;
 }
 
-/* Profile Settings Modal */
+
 .profile-settings-modal .modal {
     max-width: 600px;
 }
@@ -2202,7 +2202,7 @@ main {
     gap: 12px;
 }
 
-/* Toggle Switch */
+
 .toggle-switch {
     position: relative;
     width: 48px;
@@ -2236,7 +2236,7 @@ main {
     transform: translateX(24px);
 }
 
-/* Danger Zone */
+
 .danger-zone {
     background: rgba(239, 68, 68, 0.05);
     border: 1px solid rgba(239, 68, 68, 0.2);
@@ -2272,7 +2272,7 @@ main {
     box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
 }
 
-/* Avatar Picker Styles */
+
 .avatar-picker-overlay {
     position: fixed;
     inset: 0;
@@ -2379,7 +2379,7 @@ main {
     box-shadow: var(--accent-glow);
 }
 
-/* Compact view styles */
+
 .compact-view .habit-card {
     padding: 12px 16px;
 }
@@ -2392,7 +2392,7 @@ main {
     padding: 24px;
 }
 
-/* Advanced Profile Form Styles */
+
 .input-with-validation {
     position: relative;
     margin-bottom: 8px;
@@ -2532,7 +2532,7 @@ main {
     color: var(--success);
 }
 
-/* Form validation states */
+
 .form-input.valid {
     border-color: var(--success);
     box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
@@ -2548,7 +2548,7 @@ main {
     box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
-/* Profile Edit Sections */
+
 .profile-edit-section {
     background: var(--surface);
     border: 1px solid var(--border-subtle);
@@ -2623,7 +2623,7 @@ main {
     letter-spacing: 0.5px;
 }
 
-/* Enhanced password change section for edit mode */
+
 .profile-edit-form .input-with-validation {
     margin-bottom: 16px;
 }
@@ -2633,7 +2633,7 @@ main {
     margin-bottom: 0;
 }
 
-/* Success states */
+
 .profile-edit-section.success {
     border-color: var(--success);
     background: rgba(16, 185, 129, 0.05);
@@ -2643,7 +2643,7 @@ main {
     color: var(--success);
 }
 
-/* Edit mode styling */
+
 .profile-edit-section.editing {
     border-color: var(--accent-primary);
     background: rgba(0, 212, 255, 0.05);
@@ -2654,7 +2654,7 @@ main {
     color: var(--accent-primary);
 }
 
-/* Animation for form appearance */
+
 .profile-edit-form {
     animation: slideDown var(--animation-normal);
 }
@@ -2672,9 +2672,7 @@ main {
     }
 }
 
-/* ============================================
-   LIGHT THEME
-   ============================================ */
+
 body.light-theme {
     --bg-primary: #f8fafc;
     --bg-secondary: #ffffff;
@@ -2713,7 +2711,7 @@ body.light-theme {
         radial-gradient(circle at 40% 40%, rgba(8, 145, 178, 0.03) 0%, transparent 50%);
 }
 
-/* Light theme specific adjustments */
+
 body.light-theme .habit-card {
     border: 1px solid var(--border-default);
 }

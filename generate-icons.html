@@ -7,7 +7,7 @@
 <body>
     <canvas id="canvas"></canvas>
     <script>
-        // 🎯 Habit Tracker Icon Generator
+        
         const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
         
         sizes.forEach(size => {
@@ -16,20 +16,20 @@
             canvas.width = size;
             canvas.height = size;
             
-            // Gradient background
+            
             const gradient = ctx.createLinearGradient(0, 0, size, size);
             gradient.addColorStop(0, '#667eea');
             gradient.addColorStop(1, '#764ba2');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, size, size);
             
-            // Target emoji
+            
             ctx.font = `${size * 0.6}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('🎯', size / 2, size / 2);
             
-            // Download
+            
             canvas.toBlob(blob => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
