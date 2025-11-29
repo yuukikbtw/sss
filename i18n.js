@@ -304,7 +304,8 @@ const translations = {
         
         
         myAwards: 'Мої нагороди',
-        earnedBadges: 'Отримані значки',
+        earnedBadges: '🎖️ Отримані бейджі',
+        availableBadges: '🔒 Доступні бейджі',
         lockedBadges: 'Заблоковані значки',
         noAwards: 'Поки немає нагород',
         keepGoing: 'Продовжуйте виконувати звички!',
@@ -767,7 +768,8 @@ const translations = {
         
         
         myAwards: 'My Awards',
-        earnedBadges: 'Earned Badges',
+        earnedBadges: '🎖️ Earned Badges',
+        availableBadges: '🔒 Available Badges',
         lockedBadges: 'Locked Badges',
         noAwards: 'No awards yet',
         keepGoing: 'Keep completing habits!',
