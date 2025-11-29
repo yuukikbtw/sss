@@ -5,6 +5,11 @@ function getAutoApiBase() {
     const currentHost = window.location.hostname;
     const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
     
+    // Production на Render (или любой https без порта) - API на том же домене
+    if (window.location.protocol === 'https:' || currentHost.includes('render.com') || currentHost.includes('onrender.com')) {
+        return `${window.location.protocol}//${currentHost}/api`;
+    }
+    
     // Если заходим на порт 5001 (Flask напрямую) - используем тот же хост
     if (currentPort === '5001') {
         return `${window.location.protocol}//${currentHost}:5001/api`;
