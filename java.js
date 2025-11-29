@@ -121,29 +121,28 @@ const defaultCategories = getDefaultCategories();
 
 
 
-const badges = {
-    
-    firstStep: { id: 'firstStep', name: 'Первый шаг', emoji: '👣', description: 'Выполнить первую привычку', type: 'milestone' },
-    weekWarrior: { id: 'weekWarrior', name: 'Недельный воин', emoji: '⚔️', description: 'Выполнять привычку 7 дней подряд', type: 'streak' },
-    monthMaster: { id: 'monthMaster', name: 'Мастер месяца', emoji: '👑', description: 'Выполнять привычку 30 дней подряд', type: 'streak' },
-    hundredHero: { id: 'hundredHero', name: 'Герой сотни', emoji: '💯', description: 'Выполнить привычку 100 раз', type: 'total' },
-    
-    
-    sportsman: { id: 'sportsman', name: 'Спортсмен', emoji: '🏆', description: 'Выполнить 50 спортивных привычек', type: 'category', category: 'sport' },
-    scholar: { id: 'scholar', name: 'Учёный', emoji: '🎓', description: 'Выполнить 50 учебных привычек', type: 'category', category: 'study' },
-    healthGuru: { id: 'healthGuru', name: 'Гуру здоровья', emoji: '🌿', description: 'Выполнить 50 привычек здоровья', type: 'category', category: 'health' },
-    workaholic: { id: 'workaholic', name: 'Трудоголик', emoji: '💼', description: 'Выполнить 50 рабочих привычек', type: 'category', category: 'work' },
-    
-    
-    perfectWeek: { id: 'perfectWeek', name: 'Идеальная неделя', emoji: '✨', description: 'Выполнить все привычки за неделю', type: 'perfect' },
-    earlyBird: { id: 'earlyBird', name: 'Ранняя пташка', emoji: '🌅', description: 'Выполнить 20 привычек до 8:00', type: 'special' },
-    nightOwl: { id: 'nightOwl', name: 'Сова', emoji: '🦉', description: 'Выполнить 20 привычек после 22:00', type: 'special' },
-    streakMaster: { id: 'streakMaster', name: 'Мастер серий', emoji: '🔥', description: 'Иметь серию в 100 дней', type: 'streak' },
-    
-    
-    categoryCollector: { id: 'categoryCollector', name: 'Коллекционер', emoji: '🗂️', description: 'Создать привычки во всех категориях', type: 'collection' },
-    habitMaster: { id: 'habitMaster', name: 'Мастер привычек', emoji: '🧙‍♂️', description: 'Создать 25 привычек', type: 'collection' }
-};
+function getBadges() {
+    return {
+        firstStep: { id: 'firstStep', name: t('firstStep'), emoji: '👣', description: t('firstStepDesc'), type: 'milestone' },
+        weekWarrior: { id: 'weekWarrior', name: t('weekWarrior'), emoji: '⚔️', description: t('weekWarriorDesc'), type: 'streak' },
+        monthMaster: { id: 'monthMaster', name: t('monthMaster'), emoji: '👑', description: t('monthMasterDesc'), type: 'streak' },
+        hundredHero: { id: 'hundredHero', name: t('hundredHero'), emoji: '💯', description: t('hundredHeroDesc'), type: 'total' },
+        
+        sportsman: { id: 'sportsman', name: t('sportsman'), emoji: '🏆', description: t('sportsmanDesc'), type: 'category', category: 'sport' },
+        scholar: { id: 'scholar', name: t('scholar'), emoji: '🎓', description: t('scholarDesc'), type: 'category', category: 'study' },
+        healthGuru: { id: 'healthGuru', name: t('healthGuru'), emoji: '🌿', description: t('healthGuruDesc'), type: 'category', category: 'health' },
+        workaholic: { id: 'workaholic', name: t('workaholic'), emoji: '💼', description: t('workaholicDesc'), type: 'category', category: 'work' },
+        
+        perfectWeek: { id: 'perfectWeek', name: t('perfectWeek'), emoji: '✨', description: t('perfectWeekDesc'), type: 'perfect' },
+        earlyBird: { id: 'earlyBird', name: t('earlyBird'), emoji: '🌅', description: t('earlyBirdDesc'), type: 'special' },
+        nightOwl: { id: 'nightOwl', name: t('nightOwl'), emoji: '🦉', description: t('nightOwlDesc'), type: 'special' },
+        streakMaster: { id: 'streakMaster', name: t('streakMaster'), emoji: '🔥', description: t('streakMasterDesc'), type: 'streak' },
+        
+        categoryCollector: { id: 'categoryCollector', name: t('categoryCollector'), emoji: '🗂️', description: t('categoryCollectorDesc'), type: 'collection' },
+        habitMaster: { id: 'habitMaster', name: t('habitMaster'), emoji: '🧙‍♂️', description: t('habitMasterDesc'), type: 'collection' }
+    };
+}
+let badges = getBadges();
 
 
 function getLevels() {

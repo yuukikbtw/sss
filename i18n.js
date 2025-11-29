@@ -228,6 +228,14 @@ const translations = {
         earlyBirdDesc: 'Виконати 20 звичок до 8:00',
         nightOwl: 'Сова',
         nightOwlDesc: 'Виконати 20 звичок після 22:00',
+        workaholic: 'Трудоголік',
+        workaholicDesc: 'Виконати 50 робочих звичок',
+        streakMaster: 'Майстер серій',
+        streakMasterDesc: 'Мати серію у 100 днів',
+        categoryCollector: 'Колекціонер',
+        categoryCollectorDesc: 'Створити звички в усіх категоріях',
+        habitMaster: 'Майстер звичок',
+        habitMasterDesc: 'Створити 25 звичок',
         
         
         profileSettings: 'Налаштування профілю',
@@ -604,6 +612,14 @@ const translations = {
         earlyBirdDesc: 'Complete 20 habits before 8:00',
         nightOwl: 'Night Owl',
         nightOwlDesc: 'Complete 20 habits after 22:00',
+        workaholic: 'Workaholic',
+        workaholicDesc: 'Complete 50 work habits',
+        streakMaster: 'Streak Master',
+        streakMasterDesc: 'Have a 100-day streak',
+        categoryCollector: 'Category Collector',
+        categoryCollectorDesc: 'Create habits in all categories',
+        habitMaster: 'Habit Master',
+        habitMasterDesc: 'Create 25 habits',
         
         
         profileSettings: 'Profile Settings',
@@ -778,6 +794,9 @@ function setLanguage(lang) {
         }
         if (typeof getLevels === 'function') {
             levels = getLevels();
+        }
+        if (typeof getBadges === 'function') {
+            badges = getBadges();
         }
         
         updateAllTexts();
