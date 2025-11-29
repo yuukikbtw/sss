@@ -1,4 +1,4 @@
-
+﻿
 // Автоматически определяем API_BASE на основе текущего хоста
 // Это решает проблему с cookies при заходе по IP
 function getAutoApiBase() {
@@ -1250,7 +1250,7 @@ function addCategory(name, emoji) {
 }
 
 function deleteCategory(categoryId) {
-    if (!confirm('Удалить эту категорию?')) return;
+    if (!confirm(t('deleteCategory'))) return;
     
     categories = categories.filter(c => c.id !== categoryId);
     saveCategories();
@@ -1367,7 +1367,7 @@ async function register(username, email, password) {
         }
     } catch (error) {
         console.error('Ошибка сети при регистрации:', error);
-        showError('Ошибка сети: ' + error.message);
+        showError(t('networkErrorMsg') + error.message);
     }
 }
 
@@ -1627,7 +1627,7 @@ async function createHabit(data) {
             closeAllDropdowns();
         } else {
             const error = await response.json();
-            showError(error.error || 'Ошибка создания привычки');
+            showError(error.error || t('createError'));
         }
     } catch (error) {
         showError(t('networkError'));
@@ -1673,7 +1673,7 @@ async function updateHabit(habitId, data) {
         } else {
             const error = await response.json();
             console.error('Помилка оновлення:', error);
-            showError(error.error || 'Ошибка обновления привычки');
+            showError(error.error || t('updateError'));
         }
     } catch (error) {
         showError(t('networkError'));
@@ -1685,7 +1685,7 @@ async function deleteHabit(habitId) {
     console.log('Удаление привычки ID:', habitId);
     console.log('Доступные привычки:', habits.map(h => ({ id: h.id, name: h.name })));
     
-    if (!confirm('Удалить эту привычку?')) return;
+    if (!confirm(t('deleteHabit'))) return;
     
     try {
         const response = await apiFetch(`${API_BASE}/habits/${habitId}`, {
@@ -1711,7 +1711,7 @@ async function deleteHabit(habitId) {
         } else {
             const errorData = await response.text();
             console.error('Ошибка удаления:', response.status, errorData);
-            showError(`Ошибка удаления: ${response.status} ${response.statusText}`);
+            showError(t('deleteError') + `${response.status} ${response.statusText}`);
         }
     } catch (error) {
         showError(t('deleteNetworkError'));
@@ -1968,7 +1968,7 @@ async function toggleDay(habitId, date) {
         
         if (response.ok) {
             if (newStatus === 1) {
-                showSuccess('✅ Привычка отмечена!');
+                showSuccess(t('habitMarked'));
                 
                 // XP та прогрес нараховуємо ТІЛЬКИ за сьогодні і ТІЛЬКИ ОДИН РАЗ
                 const todayStr = new Date().toISOString().split('T')[0];
@@ -2010,7 +2010,7 @@ async function toggleDay(habitId, date) {
                     console.log('XP за цей день вже отримано, пропускаємо');
                 }
             } else {
-                showInfo('❌ Отметка снята');
+                showInfo(t('markRemoved'));
                 
                 // При відміні зменшуємо лічильник тільки якщо це сьогодні
                 const todayStr = new Date().toISOString().split('T')[0];
@@ -2367,12 +2367,12 @@ async function toggleCalendarDay(dateStr) {
 
 function editHabit(habitId) {
     console.log('Редактирование привычки ID:', habitId);
-    console.log('Доступные привычки:', habits.map(h => ({ id: h.id, name: h.name })));
+    console.log('Available habits:', habits.map(h => ({ id: h.id, name: h.name })));
     
     const habit = habits.find(h => h.id == habitId); 
     if (!habit) {
-        showError(`Привычка с ID ${habitId} не найдена в локальном массиве`);
-        console.error('Привычка не найдена. ID:', habitId, 'Тип:', typeof habitId);
+        showError(t('habitNotFound') + ` ID ${habitId}`);
+        console.error('Habit not found. ID:', habitId, 'Type:', typeof habitId);
         return;
     }
     
@@ -2881,7 +2881,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const emoji = document.getElementById('categoryEmoji').value.trim();
         
         if (!name) {
-            showError('Введите название категории');
+            showError(t('enterCategoryName'));
             return;
         }
         
@@ -3036,15 +3036,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const habitExists = habits.find(h => h.id == habitId);
                     if (!habitExists) {
-                        console.log('Привычка не найдена в локальном массиве. Обновляем...');
-                        showError('Привычка не найдена. Обновляем список...');
+                        console.log('Habit not found in local array. Refreshing...');
+                        showError(t('habitNotFoundRefresh'));
                         await fetchHabits(); 
                         
                         
                         const habitExistsAfterUpdate = habits.find(h => h.id == habitId);
                         if (!habitExistsAfterUpdate) {
-                            console.log('Привычка не найдена даже после обновления');
-                            showError('Привычка не найдена в базе данных');
+                            console.log('Habit not found even after refresh');
+                            showError(t('habitNotFoundInDb'));
                             return;
                         }
                     }
@@ -3058,22 +3058,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 const button = e.target.closest('.icon-btn.delete');
                 const habitId = button.dataset.habitId; 
-                console.log('Попытка удаления привычки ID:', habitId);
-                console.log('Доступные привычки в массиве:', habits.map(h => ({ id: h.id, name: h.name })));
+                console.log('Attempting to delete habit ID:', habitId);
+                console.log('Available habits:', habits.map(h => ({ id: h.id, name: h.name })));
                 
                 if (habitId) {
                     
                     const habitExists = habits.find(h => h.id == habitId);
                     if (!habitExists) {
-                        console.log('Привычка не найдена в локальном массиве. Обновляем...');
-                        showError('Привычка не найдена. Обновляем список...');
+                        console.log('Habit not found in local array. Refreshing...');
+                        showError(t('habitNotFoundRefresh'));
                         await fetchHabits(); 
                         
                         
                         const habitExistsAfterUpdate = habits.find(h => h.id == habitId);
                         if (!habitExistsAfterUpdate) {
-                            console.log('Привычка не найдена даже после обновления');
-                            showError('Привычка не найдена в базе данных');
+                            console.log('Habit not found even after refresh');
+                            showError(t('habitNotFoundInDb'));
                             return;
                         }
                     }
@@ -3145,9 +3145,9 @@ async function requestNotificationPermission() {
         if (Notification.permission === 'default') {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
-                showSuccess('🔔 Уведомления включены!');
+                showSuccess(t('notificationsEnabled'));
             } else {
-                showInfo('ℹ️ Уведомления отключены. Можно включить в настройках браузера.');
+                showInfo(t('notificationsDisabled'));
             }
         }
     }
@@ -3199,8 +3199,8 @@ function setupHabitReminder(habit) {
         const timeUntilReminder = nextReminderTime - now;
         const timeoutId = setTimeout(() => {
             createNotification(
-                `⏰ Время для: ${habit.name}`,
-                habit.description || 'Не забудьте выполнить свою привычку!',
+                `⏰ ${t('time')}: ${habit.name}`,
+                habit.description || t('dontForgetHabit'),
                 habit.category?.emoji || '📝'
             );
             
@@ -3233,8 +3233,8 @@ function setupHabitReminder(habit) {
             
             if (!isHabitCompletedToday(habit.id)) {
                 createNotification(
-                    `🔔 Напоминание: ${habit.name}`,
-                    habit.description || 'Время выполнить привычку!',
+                    `🔔 ${t('reminder')}: ${habit.name}`,
+                    habit.description || t('timeToDoHabit'),
                     habit.category?.emoji || '📝'
                 );
             }
@@ -3351,34 +3351,34 @@ function updateProfileUI() {
 function validateNewUsername() {
     const usernameInput = document.getElementById('newUsername');
     if (!usernameInput) {
-        showValidationError('newUsername', 'Поле имени пользователя не найдено');
+        showValidationError('newUsername', t('usernameFieldNotFound'));
         return false;
     }
     
     const username = usernameInput.value.trim();
     
     if (!username) {
-        showValidationError('newUsername', 'Имя пользователя обязательно');
+        showValidationError('newUsername', t('usernameRequired'));
         return false;
     }
     
     if (username.length < 2) {
-        showValidationError('newUsername', 'Имя должно содержать минимум 2 символа');
+        showValidationError('newUsername', t('usernameMinChars'));
         return false;
     }
     
     if (username.length > 30) {
-        showValidationError('newUsername', 'Имя не должно превышать 30 символов');
+        showValidationError('newUsername', t('usernameMaxChars'));
         return false;
     }
     
-    if (!/^[a-zA-Zа-яА-ЯёЁ0-9_\s]+$/.test(username)) {
-        showValidationError('newUsername', 'Имя может содержать только буквы, цифры, пробелы и подчеркивания');
+    if (!/^[a-zA-Zа-яА-ЯёЁіІїЇєЄ0-9_\s]+$/.test(username)) {
+        showValidationError('newUsername', t('usernameInvalidChars'));
         return false;
     }
     
     if (currentUser && username === currentUser.username) {
-        showValidationError('newUsername', 'Новое имя не должно совпадать с текущим');
+        showValidationError('newUsername', t('usernameSameAsCurrent'));
         return false;
     }
     
@@ -3392,18 +3392,18 @@ function validateNewEmail() {
     const email = emailInput.value.trim();
     
     if (!email) {
-        showValidationError('newEmail', 'Email обязателен');
+        showValidationError('newEmail', t('emailRequired'));
         return false;
     }
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        showValidationError('newEmail', 'Неверный формат email');
+        showValidationError('newEmail', t('emailInvalid'));
         return false;
     }
     
     if (currentUser && email === currentUser.email) {
-        showValidationError('newEmail', 'Новый email не должен совпадать с текущим');
+        showValidationError('newEmail', t('emailSameAsCurrent'));
         return false;
     }
     
@@ -3417,14 +3417,14 @@ async function validateCurrentPasswordEdit() {
     const password = passwordInput.value;
     
     if (!password) {
-        showValidationError('currentPasswordEdit', 'Введите текущий пароль');
+        showValidationError('currentPasswordEdit', t('enterCurrentPassword'));
         return false;
     }
     
     
     
     if (password.length < 3) {
-        showValidationError('currentPasswordEdit', 'Неверный пароль');
+        showValidationError('currentPasswordEdit', t('wrongPassword'));
         return false;
     }
     
@@ -3456,12 +3456,12 @@ function validateConfirmPasswordEdit() {
     const newPassword = newPasswordInput.value;
     
     if (!confirmPassword) {
-        showValidationError('confirmPasswordEdit', 'Подтвердите новый пароль');
+        showValidationError('confirmPasswordEdit', t('confirmNewPassword'));
         return false;
     }
     
     if (confirmPassword !== newPassword) {
-        showValidationError('confirmPasswordEdit', 'Пароли не совпадают');
+        showValidationError('confirmPasswordEdit', t('passwordsDoNotMatch'));
         return false;
     }
     
@@ -3537,7 +3537,7 @@ function resetProfileSettings() {
         if (usernameDisplay) usernameDisplay.style.display = 'block';
         if (usernameForm) usernameForm.style.display = 'none';
         if (usernameBtn) {
-            usernameBtn.textContent = 'Изменить';
+            usernameBtn.textContent = t('change');
             usernameBtn.disabled = false;
         }
         
@@ -3559,7 +3559,7 @@ function resetProfileSettings() {
         if (emailDisplay) emailDisplay.style.display = 'block';
         if (emailForm) emailForm.style.display = 'none';
         if (emailBtn) {
-            emailBtn.textContent = 'Изменить';
+            emailBtn.textContent = t('change');
             emailBtn.disabled = false;
         }
         
@@ -3580,7 +3580,7 @@ function resetProfileSettings() {
         if (passwordDisplay) passwordDisplay.style.display = 'block';
         if (passwordForm) passwordForm.style.display = 'none';
         if (passwordBtn) {
-            passwordBtn.textContent = 'Изменить';
+            passwordBtn.textContent = t('change');
             passwordBtn.disabled = false;
         }
         
@@ -3690,7 +3690,7 @@ function exportData() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    showSuccess('Данные экспортированы!');
+    showSuccess(t('dataExported'));
 }
 
 
@@ -3710,7 +3710,7 @@ function importData() {
             try {
                 const data = JSON.parse(e.target.result);
                 
-                if (confirm('Импорт данных заменит все текущие данные. Продолжить?')) {
+                if (confirm(t('importDataConfirm'))) {
                     
                     if (data.habits) habits = data.habits;
                     if (data.categories) categories = data.categories;
@@ -3722,10 +3722,10 @@ function importData() {
                     updateProfileUI();
                     renderHabits();
                     
-                    showSuccess('Данные импортированы!');
+                    showSuccess(t('dataImported'));
                 }
             } catch (error) {
-                showError('Ошибка при чтении файла');
+                showError(t('fileReadError'));
             }
         };
         reader.readAsText(file);
@@ -3846,7 +3846,7 @@ function selectAvatar(emoji) {
     updateAvatarUI();
     saveUserSettings();
     closeAvatarPicker();
-    showSuccess('Аватар обновлен!');
+    showSuccess(t('avatarUpdated'));
 }
 
 
@@ -3864,7 +3864,7 @@ async function saveProfileSettings() {
     const email = document.getElementById('settingsEmail').value.trim();
     
     if (!username || !email) {
-        showError('Пожалуйста, заполните все поля');
+        showError(t('fillAllFields'));
         return;
     }
     
@@ -3889,17 +3889,17 @@ async function saveProfileSettings() {
         saveUserSettings();
         updateProfileUI();
         closeModal('profileSettingsModal');
-        showSuccess('Настройки сохранены!');
+        showSuccess(t('settingsSaved'));
         
     } catch (error) {
-        showError('Ошибка при сохранении настроек');
+        showError(t('settingsSaveError'));
     }
 }
 
 
 function clearAllData() {
-    if (confirm('Вы уверены, что хотите удалить все данные? Это действие нельзя отменить.')) {
-        if (confirm('Последнее предупреждение! Все ваши привычки и данные будут удалены.')) {
+    if (confirm(t('deleteAllDataConfirm'))) {
+        if (confirm(t('deleteAllDataFinal'))) {
             habits = [];
             categories = [...defaultCategories];
             userSettings = {
@@ -3926,19 +3926,19 @@ function clearAllData() {
             renderHabits();
             closeModal('profileSettingsModal');
             
-            showSuccess('Все данные удалены');
+            showSuccess(t('allDataDeleted'));
         }
     }
 }
 
 
 function deleteAccount() {
-    if (confirm('Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить.')) {
+    if (confirm(t('deleteAccountConfirm'))) {
         if (confirm('Введите "DELETE" для подтверждения удаления аккаунта:') === 'DELETE') {
             
             logout();
             clearAllData();
-            showSuccess('Аккаунт удален');
+            showSuccess(t('accountDeleted'));
         }
     }
 }
@@ -4004,7 +4004,7 @@ function toggleUsernameEdit() {
         section.classList.add('editing');
         display.style.display = 'none';
         form.style.display = 'block';
-        btn.textContent = 'Редактирование...';
+        btn.textContent = t('editing');
         btn.disabled = true;
         
         
@@ -4022,7 +4022,7 @@ function cancelUsernameEdit() {
     section.classList.remove('editing', 'success');
     display.style.display = 'block';
     form.style.display = 'none';
-    btn.textContent = 'Изменить';
+    btn.textContent = t('change');
     btn.disabled = false;
     
     
@@ -4062,10 +4062,10 @@ async function saveUsername() {
         setTimeout(() => section.classList.remove('success'), 3000);
         
         cancelUsernameEdit();
-        showSuccess('Имя пользователя обновлено!');
+        showSuccess(t('usernameUpdated'));
         
     } catch (error) {
-        showError('Ошибка при обновлении имени пользователя');
+        showError(t('usernameUpdateError'));
     }
 }
 
@@ -4082,7 +4082,7 @@ function toggleEmailEdit() {
         section.classList.add('editing');
         display.style.display = 'none';
         form.style.display = 'block';
-        btn.textContent = 'Редактирование...';
+        btn.textContent = t('editing');
         btn.disabled = true;
         
         
@@ -4101,7 +4101,7 @@ function cancelEmailEdit() {
     section.classList.remove('editing', 'success');
     display.style.display = 'block';
     form.style.display = 'none';
-    btn.textContent = 'Изменить';
+    btn.textContent = t('change');
     btn.disabled = false;
     
     
@@ -4141,10 +4141,10 @@ async function saveEmail() {
         setTimeout(() => section.classList.remove('success'), 3000);
         
         cancelEmailEdit();
-        showSuccess('Email адрес обновлен!');
+        showSuccess(t('emailUpdated'));
         
     } catch (error) {
-        showError('Ошибка при обновлении email');
+        showError(t('emailUpdateError'));
     }
 }
 
@@ -4161,7 +4161,7 @@ function togglePasswordEdit() {
         section.classList.add('editing');
         display.style.display = 'none';
         form.style.display = 'block';
-        btn.textContent = 'Редактирование...';
+        btn.textContent = t('editing');
         btn.disabled = true;
     }
 }
@@ -4177,7 +4177,7 @@ function cancelPasswordEdit() {
     section.classList.remove('editing', 'success');
     display.style.display = 'block';
     form.style.display = 'none';
-    btn.textContent = 'Изменить';
+    btn.textContent = t('change');
     btn.disabled = false;
     
     
@@ -4196,7 +4196,7 @@ async function savePassword() {
     const isConfirmValid = validateConfirmPasswordEdit();
     
     if (!isCurrentValid || !isNewValid || !isConfirmValid) {
-        showError('Пожалуйста, исправьте ошибки в форме');
+        showError(t('fixFormErrors'));
         return;
     }
     
@@ -4218,10 +4218,10 @@ async function savePassword() {
         setTimeout(() => section.classList.remove('success'), 3000);
         
         cancelPasswordEdit();
-        showSuccess('Пароль успешно изменен!');
+        showSuccess(t('passwordChanged'));
         
     } catch (error) {
-        showError('Ошибка при изменении пароля');
+        showError(t('passwordChangeError'));
     }
 }
 
@@ -4278,26 +4278,26 @@ function validateUsername() {
     const username = input.value.trim();
     
     if (!username) {
-        showValidationMessage('settingsUsername', 'Имя пользователя обязательно');
+        showValidationMessage('settingsUsername', t('usernameRequired'));
         return false;
     }
     
     if (username.length < 2) {
-        showValidationMessage('settingsUsername', 'Имя должно содержать минимум 2 символа');
+        showValidationMessage('settingsUsername', t('usernameMinChars'));
         return false;
     }
     
     if (username.length > 50) {
-        showValidationMessage('settingsUsername', 'Имя не должно превышать 50 символов');
+        showValidationMessage('settingsUsername', t('usernameMaxChars50'));
         return false;
     }
     
-    if (!/^[a-zA-Zа-яА-ЯёЁ0-9_\s]+$/.test(username)) {
-        showValidationMessage('settingsUsername', 'Разрешены только буквы, цифры и подчеркивания');
+    if (!/^[a-zA-Zа-яА-ЯёЁіІїЇєЄ0-9_\s]+$/.test(username)) {
+        showValidationMessage('settingsUsername', t('usernameInvalidChars'));
         return false;
     }
     
-    showValidationMessage('settingsUsername', '✓ Имя пользователя корректно', false);
+    showValidationMessage('settingsUsername', t('usernameValid'), false);
     return true;
 }
 
@@ -4307,17 +4307,17 @@ function validateEmail() {
     const email = input.value.trim();
     
     if (!email) {
-        showValidationMessage('settingsEmail', 'Email обязателен');
+        showValidationMessage('settingsEmail', t('emailRequired'));
         return false;
     }
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        showValidationMessage('settingsEmail', 'Неверный формат email');
+        showValidationMessage('settingsEmail', t('emailInvalid'));
         return false;
     }
     
-    showValidationMessage('settingsEmail', '✓ Email корректен', false);
+    showValidationMessage('settingsEmail', t('emailValid'), false);
     return true;
 }
 
@@ -4327,13 +4327,13 @@ async function validateCurrentPassword() {
     const password = input.value;
     
     if (!password) {
-        showValidationMessage('currentPassword', 'Введите текущий пароль');
+        showValidationMessage('currentPassword', t('enterCurrentPassword'));
         return false;
     }
     
     
     
-    showValidationMessage('currentPassword', '✓ Пароль принят', false);
+    showValidationMessage('currentPassword', t('passwordAccepted'), false);
     return true;
 }
 
@@ -4344,26 +4344,26 @@ function checkPasswordStrength(password) {
     
     
     if (password.length >= 8) score++;
-    else feedback.push('минимум 8 символов');
+    else feedback.push(t('minChars') || 'min 8 chars');
     
     
     if (/[A-Z]/.test(password)) score++;
-    else feedback.push('заглавная буква');
+    else feedback.push(t('uppercase'));
     
     
     if (/[a-z]/.test(password)) score++;
-    else feedback.push('строчная буква');
+    else feedback.push(t('lowercase'));
     
     
     if (/\d/.test(password)) score++;
-    else feedback.push('цифра');
+    else feedback.push(t('digit'));
     
     
     if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
-    else feedback.push('спецсимвол');
+    else feedback.push(t('specialChar'));
     
     const strength = ['weak', 'weak', 'fair', 'good', 'strong'][Math.min(score, 4)];
-    const strengthText = ['Слабый', 'Слабый', 'Средний', 'Хороший', 'Сильный'][Math.min(score, 4)];
+    const strengthText = [t('weak'), t('weak'), t('medium'), t('good'), t('strong')][Math.min(score, 4)];
     
     return { score, strength, strengthText, feedback };
 }
@@ -4388,11 +4388,11 @@ function updatePasswordStrength(password) {
             <div class="password-strength-fill ${result.strength}"></div>
         </div>
         <div class="password-strength-text ${result.strength}">
-            Сила пароля: ${result.strengthText}
+            ${t('passwordStrength')}: ${result.strengthText}
         </div>
         ${result.feedback.length > 0 ? `
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                Нужно добавить: ${result.feedback.join(', ')}
+                ${t('needToAdd')}: ${result.feedback.join(', ')}
             </div>
         ` : ''}
     `;
@@ -4412,17 +4412,17 @@ function validateNewPassword() {
     updatePasswordStrength(password);
     
     if (password.length < 8) {
-        showValidationMessage('newPassword', 'Пароль должен содержать минимум 8 символов');
+        showValidationMessage('newPassword', t('passwordMinChars'));
         return false;
     }
     
     const strength = checkPasswordStrength(password);
     if (strength.score < 3) {
-        showValidationMessage('newPassword', 'Пароль слишком слабый. Добавьте: ' + strength.feedback.join(', '));
+        showValidationMessage('newPassword', t('passwordTooWeak') + strength.feedback.join(', '));
         return false;
     }
     
-    showValidationMessage('newPassword', '✓ Пароль достаточно надежный', false);
+    showValidationMessage('newPassword', t('passwordStrong'), false);
     
     // Also validate confirm password if it's filled
     const confirmInput = document.getElementById('confirmPassword');
@@ -4439,7 +4439,7 @@ function validateConfirmPassword() {
     const confirmPassword = document.getElementById('confirmPassword').value;
     
     if (!confirmPassword && newPassword) {
-        showValidationMessage('confirmPassword', 'Подтвердите новый пароль');
+        showValidationMessage('confirmPassword', t('confirmNewPassword'));
         return false;
     }
     
@@ -4449,11 +4449,11 @@ function validateConfirmPassword() {
     }
     
     if (newPassword !== confirmPassword) {
-        showValidationMessage('confirmPassword', 'Пароли не совпадают');
+        showValidationMessage('confirmPassword', t('passwordsDoNotMatch'));
         return false;
     }
     
-    showValidationMessage('confirmPassword', '✓ Пароли совпадают', false);
+    showValidationMessage('confirmPassword', t('passwordsMatch'), false);
     return true;
 }
 
@@ -4479,17 +4479,15 @@ async function saveProfileSettings() {
         isPasswordValid = isCurrentPasswordValid && isNewPasswordValid && isConfirmPasswordValid;
         
         if (!isPasswordValid) {
-            showError('Пожалуйста, исправьте ошибки в полях пароля');
+            showError(t('fixPasswordErrors'));
             return;
         }
     }
     
     if (!isUsernameValid || !isEmailValid) {
-        showError('Пожалуйста, исправьте ошибки в форме');
+        showError(t('fixFormErrors'));
         return;
-    }
-    
-    const username = document.getElementById('settingsUsername').value.trim();
+    }    const username = document.getElementById('settingsUsername').value.trim();
     const email = document.getElementById('settingsEmail').value.trim();
     
     // Update select values
@@ -4523,14 +4521,14 @@ async function saveProfileSettings() {
             currentUser.email = email;
             if (newPassword) {
                 // In real app, password would be handled securely by backend
-                showSuccess('Пароль изменен успешно!');
+                showSuccess(t('passwordChanged'));
             }
         }
         
         saveUserSettings();
         updateProfileUI();
         closeModal('profileSettingsModal');
-        showSuccess('Настройки профиля сохранены!');
+        showSuccess(t('profileSettingsSaved'));
         
         // Clear password fields
         document.getElementById('currentPassword').value = '';
@@ -4542,7 +4540,7 @@ async function saveProfileSettings() {
         updatePasswordStrength('');
         
     } catch (error) {
-        showError('Ошибка при сохранении настроек профиля');
+        showError(t('profileSettingsSaveError'));
     }
 }
 
