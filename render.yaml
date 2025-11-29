@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: habit-tracker
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn py:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: HABIT_SECRET
+        generateValue: true

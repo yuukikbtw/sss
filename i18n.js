@@ -161,8 +161,11 @@ const translations = {
         
         currentStreak: 'Поточна серія',
         longestStreak: 'Найдовша серія',
+        averageStreak: 'Середня серія',
         completionRate: 'Відсоток виконання',
         totalCompleted: 'Всього виконано',
+        streakStats: 'Статистика серій',
+        periodStats: 'Виконання за періоди',
         days: 'днів',
         times: 'разів',
         weekStats: 'Статистика за тиждень',
@@ -193,6 +196,9 @@ const translations = {
         monthPercent: 'Місяць %',
         days: 'днів',
         
+        // Гостевой режим
+        welcome: 'Ласкаво просимо!',
+        pleaseLoginOrRegister: 'Увійдіть або зареєструйтесь, щоб почати відстежувати свої звички',
         
         noHabits: 'Немає звичок',
         noHabitsDesc: 'Додайте першу звичку, щоб почати відстеження',
@@ -325,6 +331,49 @@ const translations = {
         enterHabitName: 'Введіть назву звички',
         enterCategoryName: 'Введіть назву категорії',
         habitNotSelected: 'Помилка: не вибрано звичку для редагування',
+        
+        // Календар
+        calendar: '📅 Календар',
+        calendarView: 'Перегляд календаря',
+        previousMonth: '◀ Попередній',
+        nextMonth: 'Наступний ▶',
+        january: 'Січень',
+        february: 'Лютий',
+        march: 'Березень',
+        april: 'Квітень',
+        may: 'Травень',
+        june: 'Червень',
+        july: 'Липень',
+        august: 'Серпень',
+        september: 'Вересень',
+        october: 'Жовтень',
+        november: 'Листопад',
+        december: 'Грудень',
+        
+        // Шагомер
+        stepCounter: '👟 Крокомір',
+        steps: 'кроків',
+        stepsToday: 'Кроків сьогодні',
+        stepsGoal: 'Ціль кроків',
+        dailyGoal: 'Ціль',
+        stepsProgress: 'Прогрес кроків',
+        stepCounterNotSupported: 'Крокомір не підтримується на цьому пристрої',
+        enableStepCounter: 'Увімкнути крокомір',
+        setGoal: 'Встановити ціль',
+        enterStepGoal: 'Введіть ціль кроків',
+        invalidGoal: 'Невірне значення цілі',
+        cannotMarkFuture: 'Не можна відмічати майбутні дати',
+        cannotMarkPast: 'Не можна відмічати минулі дати. Тільки сьогодні!',
+        remaining: 'Залишилось:',
+        goalCompleted: '🎉 Ціль досягнута!',
+        defaultGoal: 'За замовчуванням: 10,000 кроків',
+        
+        // Гейміфікація
+        xpEarned: 'Отримано XP',
+        levelUp: 'Новий рівень!',
+        newBadge: 'Новий значок!',
+        totalXP: 'Всього XP',
+        nextLevel: 'До наступного рівня',
     },
     
     en: {
@@ -489,8 +538,11 @@ const translations = {
         
         currentStreak: 'Current Streak',
         longestStreak: 'Longest Streak',
+        averageStreak: 'Average Streak',
         completionRate: 'Completion Rate',
         totalCompleted: 'Total Completed',
+        streakStats: 'Streak Statistics',
+        periodStats: 'Period Completion',
         days: 'days',
         times: 'times',
         weekStats: 'Week Statistics',
@@ -520,6 +572,9 @@ const translations = {
         weekPercent: 'Week %',
         monthPercent: 'Month %',
         
+        // Guest mode
+        welcome: 'Welcome!',
+        pleaseLoginOrRegister: 'Please log in or register to start tracking your habits',
         
         noHabits: 'No habits',
         noHabitsDesc: 'Add your first habit to start tracking',
@@ -652,6 +707,49 @@ const translations = {
         enterHabitName: 'Enter habit name',
         enterCategoryName: 'Enter category name',
         habitNotSelected: 'Error: no habit selected for editing',
+        
+        // Calendar
+        calendar: '📅 Calendar',
+        calendarView: 'Calendar View',
+        previousMonth: '◀ Previous',
+        nextMonth: 'Next ▶',
+        january: 'January',
+        february: 'February',
+        march: 'March',
+        april: 'April',
+        may: 'May',
+        june: 'June',
+        july: 'July',
+        august: 'August',
+        september: 'September',
+        october: 'October',
+        november: 'November',
+        december: 'December',
+        
+        // Step Counter
+        stepCounter: '👟 Step Counter',
+        steps: 'steps',
+        stepsToday: 'Steps Today',
+        stepsGoal: 'Step Goal',
+        dailyGoal: 'Goal',
+        stepsProgress: 'Step Progress',
+        stepCounterNotSupported: 'Step counter is not supported on this device',
+        enableStepCounter: 'Enable Step Counter',
+        setGoal: 'Set Goal',
+        enterStepGoal: 'Enter step goal',
+        invalidGoal: 'Invalid goal value',
+        cannotMarkFuture: 'Cannot mark future dates',
+        cannotMarkPast: 'Cannot mark past dates. Only today!',
+        remaining: 'Remaining:',
+        goalCompleted: '🎉 Goal achieved!',
+        defaultGoal: 'Default: 10,000 steps',
+        
+        // Gamification
+        xpEarned: 'XP Earned',
+        levelUp: 'Level Up!',
+        newBadge: 'New Badge!',
+        totalXP: 'Total XP',
+        nextLevel: 'To Next Level',
     }
 };
 

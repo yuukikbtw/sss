@@ -85,11 +85,15 @@ header {
     width: 100%;
 }
 
+header h1 {
+    flex-shrink: 0;
+}
+
 
 .connection-status {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+    position: fixed;
+    top: 15px;
+    left: 15px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -99,7 +103,7 @@ header {
     font-weight: 600;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
-    z-index: 100;
+    z-index: 1000;
 }
 
 .connection-status.online {
@@ -181,8 +185,14 @@ header h1::after {
     gap: 16px;
     align-items: center;
     flex-wrap: wrap;
+    margin-left: auto;
 }
 
+#authButtons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
 
 #appButtons {
     display: flex;
@@ -1040,6 +1050,16 @@ main {
     grid-template-columns: 1fr 400px;
 }
 
+/* Когда aside скрыт - одна колонка на всю ширину */
+main.guest-mode {
+    grid-template-columns: 1fr;
+}
+
+main.guest-mode .panel {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
 @media (max-width: 1024px) {
     main {
         grid-template-columns: 1fr;
@@ -1054,6 +1074,9 @@ main {
     padding: 32px;
     box-shadow: var(--shadow-md);
     transition: all var(--animation-normal);
+    overflow: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .panel:hover {
@@ -1066,6 +1089,11 @@ main {
     margin-bottom: 24px;
     color: var(--text-primary);
     letter-spacing: -0.01em;
+}
+
+#statsPanel {
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 
@@ -1852,7 +1880,7 @@ main {
 
 
 #userInfo {
-    display: flex !important;
+    display: flex;
     align-items: center;
     gap: 16px;
     padding: 12px 20px;
@@ -1864,6 +1892,10 @@ main {
     cursor: pointer;
     position: relative;
     z-index: 500;
+}
+
+#userInfo[style*="display: none"] {
+    display: none !important;
 }
 
 #userInfo:hover {
@@ -2786,4 +2818,1077 @@ body.light-theme .notification.error {
 body.light-theme .notification.info {
     background: #dbeafe;
     color: #1e40af;
+}
+
+/* ========================================== */
+/* ПОКРАЩЕНА СТАТИСТИКА */
+/* ========================================== */
+
+.stats-section {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-top: 16px;
+}
+
+.stats-section-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Компактна сітка статистики */
+.stats-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.stat-item-compact {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all var(--animation-normal);
+}
+
+.stat-item-compact:hover {
+    background: var(--surface-elevated);
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    font-size: 1.5rem;
+    min-width: 36px;
+    text-align: center;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stat-value-large {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+}
+
+.stat-label-small {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+/* Блок Completion Rate з круговою діаграмою */
+.completion-rate-block {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.completion-rate-circle {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+.circular-chart {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.circle-bg {
+    fill: none;
+    stroke: var(--border-subtle);
+    stroke-width: 3;
+}
+
+.circle-progress {
+    fill: none;
+    stroke: url(#gradient);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke: var(--accent-primary);
+    transition: stroke-dasharray 0.6s ease;
+}
+
+.completion-rate-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.cr-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent-primary);
+    display: block;
+    line-height: 1;
+}
+
+.cr-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+}
+
+.completion-rate-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cr-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cr-period {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    min-width: 60px;
+    font-weight: 600;
+}
+
+.cr-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+}
+
+.cr-progress-fill {
+    height: 100%;
+    background: var(--accent-gradient);
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+.cr-percent {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 45px;
+    text-align: right;
+}
+
+/* ========================================== */
+/* ПОКРАЩЕНІ XP ТА РІВНІ */
+/* ========================================== */
+
+.xp-bar {
+    position: relative;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+    border: 1px solid var(--border-subtle);
+}
+
+.xp-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease-out;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.xp-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-shadow: 0 0 3px var(--bg-primary);
+    white-space: nowrap;
+}
+
+.user-level {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.level-emoji {
+    font-size: 1.1rem;
+}
+
+.level-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.level-number {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: var(--surface);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* ========================================== */
+/* НОТИФІКАЦІЇ ГЕЙМІФІКАЦІЇ */
+/* ========================================== */
+
+.level-up-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #1f2937;
+    padding: 32px 48px;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 25px 50px -12px rgba(251, 191, 36, 0.5);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.level-up-notification.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.level-up-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+    flex-direction: column;
+}
+
+.level-up-icon {
+    font-size: 4rem;
+    animation: bounce 0.6s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.level-up-text h3 {
+    font-size: 1.75rem;
+    font-weight: 900;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.level-up-text p {
+    font-size: 1rem;
+    margin: 4px 0;
+}
+
+.level-up-text .level-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #7c2d12;
+}
+
+/* Нотифікація бейджів */
+.badge-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    color: white;
+    padding: 20px 28px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 40px -10px rgba(139, 92, 246, 0.5);
+    z-index: 10000;
+    opacity: 0;
+    transform: translateX(100px);
+    transition: all 0.4s ease;
+}
+
+.badge-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.badge-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.badge-icon {
+    font-size: 2.5rem;
+    animation: pulse-badge 1s infinite;
+}
+
+@keyframes pulse-badge {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.badge-text h4 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 0.9;
+    margin-bottom: 4px;
+}
+
+.badge-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+}
+
+.badge-description {
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+
+/* Нотифікація XP */
+.xp-notification {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 12px 20px;
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
+    z-index: 9999;
+    opacity: 0;
+    transform: translateX(50px) scale(0.8);
+    transition: all 0.3s ease;
+}
+
+.xp-notification.show {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+}
+
+.xp-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.xp-icon {
+    font-size: 1.5rem;
+    animation: spin 1s ease-out;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.xp-notification .xp-text {
+    position: static;
+    transform: none;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-shadow: none;
+}
+
+/* ========================================== */
+/* БЛОК НАГОРОД */
+/* ========================================== */
+
+.awards-section {
+    margin-bottom: 24px;
+}
+
+.awards-section h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.progress-overview {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.progress-item {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.progress-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.progress-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.badge-item {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    text-align: center;
+    transition: all var(--animation-normal);
+}
+
+.badge-item:hover {
+    background: var(--surface-elevated);
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+}
+
+.badge-item.earned {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1));
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.badge-item.locked {
+    opacity: 0.5;
+    filter: grayscale(0.8);
+}
+
+.badge-item .badge-emoji {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.badge-item .badge-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.badge-item .badge-desc {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* Адаптивність для статистики */
+@media (max-width: 768px) {
+    .stats-grid-compact {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    
+    .stat-item-compact {
+        padding: 10px 8px;
+        flex-direction: column;
+        text-align: center;
+        gap: 6px;
+    }
+    
+    .stat-item-compact .stat-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 1rem;
+    }
+    
+    .stat-value-large {
+        font-size: 1.1rem;
+    }
+    
+    .stat-label-small {
+        font-size: 0.55rem;
+        letter-spacing: 0;
+    }
+    
+    .completion-rate-block {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .completion-rate-details {
+        width: 100%;
+    }
+    
+    .progress-overview {
+        grid-template-columns: 1fr;
+    }
+    
+    .badges-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .level-up-notification {
+        padding: 24px 32px;
+        width: 90%;
+        max-width: 320px;
+    }
+    
+    .badge-notification {
+        right: 10px;
+        left: 10px;
+        width: auto;
+    }
+    
+    .step-counter-header {
+        flex-direction: row;
+    }
+    
+    .step-goal-info {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+@media (max-width: 400px) {
+    .stats-grid-compact {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+    
+    .stat-item-compact {
+        padding: 8px 6px;
+    }
+    
+    .stat-item-compact .stat-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 0.9rem;
+    }
+    
+    .stat-value-large {
+        font-size: 1rem;
+    }
+    
+    .stat-label-small {
+        font-size: 0.5rem;
+    }
+}
+
+/* ========== КАЛЕНДАРЬ ========== */
+.calendar-container {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.calendar-month-year {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.calendar-nav-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all var(--animation-fast);
+}
+
+.calendar-nav-btn:hover {
+    background: var(--surface-elevated);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.calendar-weekday {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 0;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--animation-fast);
+    border: 1px solid transparent;
+}
+
+.calendar-day:hover:not(.empty):not(.future) {
+    background: var(--surface-elevated);
+    border-color: var(--accent-primary);
+    transform: scale(1.1);
+}
+
+.calendar-day.empty {
+    background: transparent;
+    cursor: default;
+}
+
+.calendar-day.completed {
+    background: var(--accent-gradient);
+    color: var(--text-inverse);
+    box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+}
+
+.calendar-day.today {
+    border: 2px solid var(--accent-primary);
+    font-weight: 800;
+}
+
+.calendar-day.today.completed {
+    box-shadow: 0 0 0 2px var(--accent-primary), 0 2px 8px rgba(0, 212, 255, 0.4);
+}
+
+.calendar-day.future {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.calendar-day.past {
+    opacity: 0.7;
+    cursor: default;
+}
+
+.calendar-day.past:not(.completed) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.day-cell.past {
+    opacity: 0.6;
+    cursor: not-allowed !important;
+}
+
+.day-cell.past:not(.done) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* ========== ШАГОМЕР ========== */
+.step-counter-container {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.step-counter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.step-counter-icon {
+    font-size: 2.5rem;
+    animation: bounce 2s infinite;
+}
+
+.step-counter-percent {
+    font-size: 1.8rem;
+    font-weight: 900;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all var(--animation-normal);
+}
+
+.step-counter-percent.completed {
+    background: var(--success);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: pulse-glow 1s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.step-counter-value {
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+    line-height: 1.2;
+}
+
+.step-counter-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.step-progress-container {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    height: 14px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-subtle);
+}
+
+.step-progress-bar {
+    height: 100%;
+    background: var(--accent-gradient);
+    border-radius: var(--radius-lg);
+    transition: width var(--animation-slow);
+    position: relative;
+}
+
+.step-progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.step-goal-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.step-goal-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.step-goal-text span {
+    font-weight: 700;
+    color: var(--accent-primary);
+}
+
+.step-remaining {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+}
+
+.step-remaining span {
+    font-weight: 600;
+    color: var(--warning);
+}
+
+.step-counter-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+.step-counter-actions .btn {
+    padding: 10px 20px;
+    font-size: 0.85rem;
+}
+
+/* ========== УЛУЧШЕННЫЕ СТИЛИ СТАТИСТИКИ ========== */
+.stats-section {
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.stats-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.stats-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.stat-item-compact {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all var(--animation-fast);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.stat-item-compact:hover {
+    background: var(--surface-elevated);
+    transform: translateY(-2px);
+}
+
+.stat-item-compact .stat-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-elevated);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+}
+
+.stat-item-compact .stat-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.stat-value-large {
+    font-size: 1.3rem;
+    font-weight: 800;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stat-label-small {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Completion Rate круговой индикатор */
+.completion-rate-block {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+}
+
+.completion-rate-circle {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+.circular-chart {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.circle-bg {
+    fill: none;
+    stroke: var(--bg-secondary);
+    stroke-width: 3;
+}
+
+.circle-progress {
+    fill: none;
+    stroke: url(#gradient);
+    stroke: var(--accent-primary);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dasharray var(--animation-slow);
+}
+
+.completion-rate-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.cr-value {
+    font-size: 1.5rem;
+    font-weight: 900;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+    line-height: 1;
+}
+
+.cr-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.completion-rate-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cr-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cr-period {
+    width: 60px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.cr-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.cr-progress-fill {
+    height: 100%;
+    background: var(--accent-gradient);
+    border-radius: 4px;
+    transition: width var(--animation-normal);
+}
+
+.cr-percent {
+    width: 45px;
+    text-align: right;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Адаптивность календаря */
+@media (max-width: 480px) {
+    .calendar-day {
+        font-size: 0.7rem;
+    }
+    
+    .calendar-weekday {
+        font-size: 0.6rem;
+    }
+    
+    .step-counter-value {
+        font-size: 2rem;
+    }
+    
+    .stats-grid-compact {
+        grid-template-columns: 1fr;
+    }
 }

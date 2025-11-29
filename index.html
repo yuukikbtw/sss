@@ -20,6 +20,26 @@
             </div>
             
             <div class="header-actions">
+                <!-- Кнопки авторизации (для гостей) -->
+                <div id="authButtons">
+                    <button class="btn btn-secondary" onclick="openAuthModal('login')" data-i18n="login">Увійти</button>
+                    <button class="btn" onclick="openAuthModal('register')" data-i18n="register">Реєстрація</button>
+                </div>
+                
+                <!-- Кнопки приложения (для залогиненных) -->
+                <div id="appButtons" style="display: none;">
+                    <button class="btn btn-secondary" onclick="openAwardsModal()">
+                        <span data-i18n="awards">🏆 Нагороди</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="openCategoriesModal()">
+                        <span data-i18n="categories">🏷️ Категорії</span>
+                    </button>
+                    <button class="btn" onclick="openAddHabitModal()">
+                        <span data-i18n="addHabit">➕ Додати звичку</span>
+                    </button>
+                </div>
+                
+                <!-- Информация о пользователе (справа, для залогиненных) -->
                 <div id="userInfo" style="display: none;">
                     <div class="user-avatar">
                         <span id="userAvatar">👤</span>
@@ -48,7 +68,7 @@
                     </div>
                     <div class="user-dropdown-arrow">▼</div>
                     
-                    
+                    <!-- Выпадающее меню профиля -->
                     <div class="user-profile-dropdown" id="userProfileDropdown">
                         <div class="profile-header">
                             <div class="profile-avatar-large">
@@ -98,18 +118,6 @@
                         </div>
                     </div>
                 </div>
-                <div id="authButtons">
-                    <button class="btn btn-secondary" onclick="openAuthModal('login')" data-i18n="login">Увійти</button>
-                    <button class="btn" onclick="openAuthModal('register')" data-i18n="register">Реєстрація</button>
-                </div>
-                <div id="appButtons" style="display: none;">
-                    <button class="btn btn-secondary" onclick="openCategoriesModal()">
-                        <span data-i18n="categories">🏷️ Категорії</span>
-                    </button>
-                    <button class="btn" onclick="openAddHabitModal()">
-                        <span data-i18n="addHabit">➕ Додати звичку</span>
-                    </button>
-                </div>
             </div>
         </header>
 
@@ -124,6 +132,33 @@
 
             <aside class="panel">
                 <h2 data-i18n="statistics">📊 Статистика</h2>
+                
+                <!-- Шагомер -->
+                <div class="step-counter-container" id="stepCounterSection" style="display: none;">
+                    <div class="step-counter-header">
+                        <div class="step-counter-icon">👟</div>
+                        <div class="step-counter-percent" id="stepsPercent">0%</div>
+                    </div>
+                    <span class="step-counter-value" id="stepsToday">0</span>
+                    <div class="step-counter-label" data-i18n="stepsToday">Кроків сьогодні</div>
+                    <div class="step-progress-container">
+                        <div class="step-progress-bar" id="stepsProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="step-goal-info">
+                        <div class="step-goal-text">
+                            <span data-i18n="dailyGoal">Ціль:</span> <span id="stepGoal">10,000</span> <span data-i18n="steps">кроків</span>
+                        </div>
+                        <div class="step-remaining" id="stepsRemaining">
+                            <span data-i18n="remaining">Залишилось:</span> <span id="stepsRemainingValue">10,000</span>
+                        </div>
+                    </div>
+                    <div class="step-counter-actions">
+                        <button class="btn btn-secondary" onclick="openSetGoalModal()">
+                            🎯 <span data-i18n="setGoal">Встановити ціль</span>
+                        </button>
+                    </div>
+                </div>
+                
                 <div id="statsPanel">
                     <div class="empty-state">
                         <h3 data-i18n="selectHabit">Оберіть звичку</h3>

@@ -1,14 +1,34 @@
 
-let API_BASE = localStorage.getItem('api_base') || 'https://sss-vcq4.onrender.com/api';
+// Автоматически определяем API_BASE на основе текущего хоста
+// Это решает проблему с cookies при заходе по IP
+function getAutoApiBase() {
+    const currentHost = window.location.hostname;
+    const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+    
+    // Если заходим на порт 5001 (Flask напрямую) - используем тот же хост
+    if (currentPort === '5001') {
+        return `${window.location.protocol}//${currentHost}:5001/api`;
+    }
+    
+    // Если заходим на порт 8000 (static server) - API на том же хосте, порт 5001
+    if (currentPort === '8000') {
+        return `${window.location.protocol}//${currentHost}:5001/api`;
+    }
+    
+    // Fallback
+    return 'http://localhost:5001/api';
+}
+
+let API_BASE = getAutoApiBase();
 let isServerOnline = false;
 let serverCheckInterval = null;
 
-
+// Сохраняем для совместимости, но теперь не используем localStorage
 const POSSIBLE_API_URLS = [
-    'https://sss-vcq4.onrender.com/api',  
+    getAutoApiBase(),
     'http://localhost:5001/api',
     'http://127.0.0.1:5001/api',
-    'http://192.168.0.105:5001/api'
+    'https://sss-vcq4.onrender.com/api'
 ];
 
 
@@ -27,15 +47,48 @@ function updateConnectionStatus(online) {
 
 
 async function apiFetch(url, options = {}) {
-    const defaultOptions = {
-        credentials: 'include',  
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
+    // Получаем токен
+    let token = null;
+    try {
+        token = localStorage.getItem('authToken');
+    } catch (e) {
+        console.warn('Не удалось прочитать токен:', e);
+    }
+    
+    // Формируем заголовки
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
     };
     
-    return fetch(url, { ...defaultOptions, ...options });
+    // Добавляем Bearer токен
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log(`📤 ${options.method || 'GET'} ${url} [TOKEN: ${token.substring(0, 15)}...]`);
+    } else {
+        console.log(`📤 ${options.method || 'GET'} ${url} [NO TOKEN]`);
+    }
+    
+    const fetchOptions = {
+        ...options,
+        credentials: 'include',
+        headers: headers
+    };
+    
+    // Убираем headers из options чтобы не дублировались
+    delete fetchOptions.headers;
+    fetchOptions.headers = headers;
+    
+    const response = await fetch(url, fetchOptions);
+    console.log(`📥 ${response.status} ${url}`);
+    
+    // Если 401 - токен протух, пробуем перелогиниться
+    if (response.status === 401 && !url.includes('/login') && !url.includes('/register')) {
+        console.warn('⚠️ Токен недействителен, требуется повторный вход');
+        // Можно показать модалку логина
+    }
+    
+    return response;
 }
 
 let habits = [];
@@ -117,7 +170,9 @@ let userProgress = {
     weeklyPerfectDays: 0,
     earlyBirdCount: 0,
     nightOwlCount: 0,
-    createdHabits: 0
+    createdHabits: 0,
+    // Зберігаємо дні за які вже отримано XP: { "habitId_date": true }
+    xpClaimedDays: {}
 };
 
 
@@ -1251,10 +1306,16 @@ async function login(email, password) {
         });
         
         const data = await response.json();
+        console.log('🔐 Ответ логина:', { status: response.status, token: data.token ? 'получен' : 'не получен', user: data.user?.email });
         
         if (response.ok) {
             currentUser = data.user;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            // Сохраняем выданный токен (если пришёл)
+            if (data.token) {
+                localStorage.setItem('authToken', data.token);
+                console.log('✅ Токен сохранён в localStorage:', data.token.substring(0, 20) + '...');
+            }
             
             
             const rememberMe = document.getElementById('rememberMe').checked;
@@ -1309,20 +1370,25 @@ async function register(username, email, password) {
 async function logout() {
     try {
         await apiFetch(`${API_BASE}/logout`, { method: 'POST' });
-        currentUser = null;
-        localStorage.removeItem('currentUser');
-        
-        
-        const rememberMe = document.getElementById('rememberMe')?.checked;
-        if (!rememberMe) {
-            localStorage.removeItem('rememberedUser');
-        }
-        
-        updateUIForLoggedOutUser();
-        showSuccess(t('logoutSuccess'));
     } catch (error) {
-        console.error(error);
+        console.error('Logout API error:', error);
     }
+    
+    // Очищаем всё локально в любом случае
+    currentUser = null;
+    habits = [];
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
+    
+    // Удаляем rememberedUser если не включен "запомнить меня"
+    const rememberMe = document.getElementById('rememberMe')?.checked;
+    if (!rememberMe) {
+        localStorage.removeItem('rememberedUser');
+    }
+    
+    // Обновляем UI
+    updateUIForLoggedOutUser();
+    showSuccess(t('logoutSuccess'));
 }
 
 async function checkAuth() {
@@ -1367,19 +1433,88 @@ function updateUIForLoggedInUser() {
     document.getElementById('userInfo').style.display = 'flex';
     document.getElementById('appButtons').style.display = 'flex';
     document.getElementById('userName').textContent = currentUser.username;
+    
+    // Показываем шагомер для залогиненных пользователей
+    const stepCounterSection = document.getElementById('stepCounterSection');
+    if (stepCounterSection) {
+        stepCounterSection.style.display = 'block';
+    }
+    
+    // Показываем статистику в aside
+    const statsSection = document.querySelector('aside.panel');
+    if (statsSection) {
+        statsSection.style.display = 'block';
+    }
+    
+    // Убираем guest-mode с main
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+        mainElement.classList.remove('guest-mode');
+    }
+    
     updateProfileUI(); 
 }
 
 function updateUIForLoggedOutUser() {
-    
+    // Показываем кнопки авторизации
     document.getElementById('authButtons').style.display = 'flex';
+    
+    // Скрываем элементы для авторизованных
     document.getElementById('userInfo').style.display = 'none';
     document.getElementById('appButtons').style.display = 'none';
     
+    // Скрываем шагомер
+    const stepCounterSection = document.getElementById('stepCounterSection');
+    if (stepCounterSection) {
+        stepCounterSection.style.display = 'none';
+    }
     
+    // Скрываем статистику в aside (там профиль, категории и т.д.)
+    const statsSection = document.querySelector('aside.panel');
+    if (statsSection) {
+        statsSection.style.display = 'none';
+    }
+    
+    // Добавляем guest-mode на main чтобы убрать пустое место
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+        mainElement.classList.add('guest-mode');
+    }
+    
+    // Сбрасываем отображение профиля
+    const userLevel = document.getElementById('userLevel');
+    if (userLevel) {
+        userLevel.innerHTML = '';
+    }
+    
+    // Очищаем данные пользователя
     currentUser = null;
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
     habits = [];
-    renderHabits();
+    
+    // Показываем сообщение "Войдите или зарегистрируйтесь"
+    renderHabitsForGuest();
+}
+
+function renderHabitsForGuest() {
+    const habitsList = document.getElementById('habitsList');
+    if (habitsList) {
+        habitsList.innerHTML = `
+            <div class="empty-state guest-message">
+                <h3>👋 ${t('welcome') || 'Ласкаво просимо!'}</h3>
+                <p>${t('pleaseLoginOrRegister') || 'Увійдіть або зареєструйтесь, щоб почати відстежувати свої звички'}</p>
+                <div class="guest-buttons" style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="openAuthModal('login')">
+                        ${t('login') || 'Увійти'}
+                    </button>
+                    <button class="btn btn-secondary" onclick="openAuthModal('register')">
+                        ${t('register') || 'Зареєструватися'}
+                    </button>
+                </div>
+            </div>
+        `;
+    }
 }
 
 
@@ -1692,14 +1827,19 @@ function renderHabits() {
                         ).join('')}
                         ${getWeekDays().map(date => {
                             const dateStr = formatDate(date);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            date.setHours(0, 0, 0, 0);
                             const isToday = dateStr === formatDate(new Date());
+                            const isFuture = date > today;
+                            const isPast = date < today;
                             console.log(`Рендеринг ячейки для привычки ${habit.id} на дату ${dateStr}`);
                             return `
-                                <div class="day-cell ${isToday ? 'today' : ''}" 
+                                <div class="day-cell ${isToday ? 'today' : ''} ${isFuture ? 'future disabled' : ''} ${isPast ? 'past disabled' : ''}" 
                                          data-habit-id="${habit.id}" 
                                          data-date="${dateStr}"
-                                         title="${t('clickToMarkCompletion')}"
-                                         style="cursor: pointer;">
+                                         title="${isFuture ? t('cannotMarkFuture') : (isPast ? t('cannotMarkPast') : t('clickToMarkCompletion'))}"
+                                         style="cursor: ${(isFuture || isPast) ? 'not-allowed' : 'pointer'}; ${isFuture ? 'opacity: 0.4;' : ''} ${isPast ? 'opacity: 0.6;' : ''}">
                                     ${date.getDate()}
                                 </div>
                             `;
@@ -1722,15 +1862,35 @@ async function updateWeekCells() {
             const stats = await response.json();
             
             if (stats.entries) {
+                // Статус может быть true/false или 1/0
                 const completedDates = new Set(
-                    stats.entries.filter(e => e.status === 1).map(e => e.date)
+                    stats.entries.filter(e => e.status === true || e.status === 1).map(e => e.date)
                 );
+                
+                const notCompletedDates = new Set(
+                    stats.entries.filter(e => e.status === false || e.status === 0).map(e => e.date)
+                );
+                
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
                 
                 weekDays.forEach(date => {
                     const dateStr = formatDate(date);
+                    const cellDate = new Date(date);
+                    cellDate.setHours(0, 0, 0, 0);
+                    const isFuture = cellDate > today;
+                    
                     const cell = document.querySelector(`[data-habit-id="${habit.id}"][data-date="${dateStr}"]`);
-                    if (cell && completedDates.has(dateStr)) {
-                        cell.classList.add('done');
+                    if (cell) {
+                        // Майбутні дати ніколи не можуть бути done
+                        if (isFuture) {
+                            cell.classList.remove('done');
+                            cell.classList.add('future', 'disabled');
+                        } else if (completedDates.has(dateStr)) {
+                            cell.classList.add('done');
+                        } else {
+                            cell.classList.remove('done');
+                        }
                     }
                 });
             }
@@ -1744,11 +1904,30 @@ async function updateWeekCells() {
 async function toggleDay(habitId, date) {
     console.log(`Переключение состояния привычки ${habitId} на дату ${date}`);
     
+    // Перевіряємо чи дата не в майбутньому і не в минулому (тільки сьогодні!)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    if (selectedDate > today) {
+        showError(t('cannotMarkFuture') || 'Не можна відмічати майбутні дати');
+        return;
+    }
+    
+    // Заборона відмічати минулі дні (тільки сьогодні можна!)
+    if (selectedDate < today) {
+        showError(t('cannotMarkPast') || 'Не можна відмічати минулі дати');
+        return;
+    }
+    
+    let cell = null;
+    let newStatus = 0;
+    
     try {
-        
         console.log('Поиск ячейки с селектором:', `[data-habit-id="${habitId}"][data-date="${date}"]`);
         
-        const cell = document.querySelector(`[data-habit-id="${habitId}"][data-date="${date}"]`);
+        cell = document.querySelector(`[data-habit-id="${habitId}"][data-date="${date}"]`);
         
         if (!cell) {
             console.error(`Не найдена ячейка для привычки ${habitId} и даты ${date}`);
@@ -1761,11 +1940,18 @@ async function toggleDay(habitId, date) {
         }
         
         const isDone = cell.classList.contains('done');
-        const newStatus = isDone ? 0 : 1; 
+        newStatus = isDone ? 0 : 1; 
         
-        console.log('Текущее состояние:', isDone ? 'выполнено' : 'не выполнено', '-> новое:', newStatus === 1 ? 'выполнено' : 'не выполнено');
+        console.log(`Текущий статус: ${isDone ? 'выполнено' : 'не выполнено'}, новый статус: ${newStatus}`);
         
+        // ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ - сразу меняем UI без ожидания сервера
+        if (newStatus === 1) {
+            cell.classList.add('done');
+        } else {
+            cell.classList.remove('done');
+        }
         
+        // Отправляем на сервер
         const response = await apiFetch(`${API_BASE}/habits/${habitId}/tick`, {
             method: 'POST',
             body: JSON.stringify({
@@ -1774,98 +1960,118 @@ async function toggleDay(habitId, date) {
             })
         });
         
-        console.log('Ответ сервера:', response.status, response.statusText);
+        console.log('Ответ сервера:', response.status, response.ok);
         
         if (response.ok) {
-            
             if (newStatus === 1) {
-                cell.classList.add('done');
-                showSuccess('✅ Привычка отмечена как выполненная!');
+                showSuccess('✅ Привычка отмечена!');
                 
+                // XP та прогрес нараховуємо ТІЛЬКИ за сьогодні і ТІЛЬКИ ОДИН РАЗ
+                const todayStr = new Date().toISOString().split('T')[0];
+                const isToday = (date === todayStr);
                 
+                // Ключ для перевірки чи вже отримано XP за цей день
+                const xpKey = `${habitId}_${date}`;
+                const alreadyClaimedXP = userProgress.xpClaimedDays && userProgress.xpClaimedDays[xpKey];
                 
-                const habit = habits.find(h => h.id === habitId);
-                if (habit) {
+                const habit = habits.find(h => String(h.id) === String(habitId));
+                if (habit && isToday && !alreadyClaimedXP) {
+                    // Позначаємо що XP за цей день вже отримано
+                    if (!userProgress.xpClaimedDays) {
+                        userProgress.xpClaimedDays = {};
+                    }
+                    userProgress.xpClaimedDays[xpKey] = true;
                     
                     userProgress.totalHabitsCompleted++;
-                    
                     
                     if (habit.category) {
                         userProgress.categoryStats[habit.category] = (userProgress.categoryStats[habit.category] || 0) + 1;
                     }
                     
-                    
                     userProgress.currentStreaks[habitId] = (userProgress.currentStreaks[habitId] || 0) + 1;
-                    
                     
                     const currentStreak = userProgress.currentStreaks[habitId];
                     if (currentStreak > userProgress.longestStreak) {
                         userProgress.longestStreak = currentStreak;
                     }
                     
-                    
                     const earnedXP = calculateXP(habit);
                     awardXP(earnedXP);
-                    
-                    
                     checkBadges(habit, new Date());
-                    
                     
                     setTimeout(() => {
                         showXPNotification(earnedXP);
                     }, 500);
+                } else if (alreadyClaimedXP) {
+                    console.log('XP за цей день вже отримано, пропускаємо');
                 }
             } else {
-                cell.classList.remove('done');
-                showInfo('❌ Отметка о выполнении снята');
+                showInfo('❌ Отметка снята');
                 
+                // При відміні зменшуємо лічильник тільки якщо це сьогодні
+                const todayStr = new Date().toISOString().split('T')[0];
+                const isToday = (date === todayStr);
                 
-                const habit = habits.find(h => h.id === habitId);
-                if (habit) {
-                    
+                const habit = habits.find(h => String(h.id) === String(habitId));
+                if (habit && isToday) {
                     if (userProgress.totalHabitsCompleted > 0) {
                         userProgress.totalHabitsCompleted--;
                     }
-                    
-                    
                     if (habit.category && userProgress.categoryStats[habit.category] > 0) {
                         userProgress.categoryStats[habit.category]--;
                     }
-                    
-                    
+                    // Сбрасываем текущий стрик при отмене
                     userProgress.currentStreaks[habitId] = 0;
-                    
-                    
-                    saveUserProgress();
                 }
             }
             
-            
-            console.log('Перевірка оновлення статистики:', { selectedHabitId, habitId, рівні: selectedHabitId == habitId });
-            if (selectedHabitId == habitId) {
-                console.log('Оновлюємо статистику для звички:', habitId);
-                setTimeout(() => loadStats(habitId), 500); 
+            // Обновляем статистику если эта привычка выбрана
+            if (String(selectedHabitId) === String(habitId)) {
+                loadStats(habitId);
             }
             
-            
-            setTimeout(() => updateWeekCells(), 500);
+            // Оновлюємо статистику в шапці профілю
+            updateUserStats();
         } else {
+            // Откатываем UI если сервер вернул ошибку
+            console.error('Сервер вернул ошибку:', response.status);
+            if (newStatus === 1) {
+                cell.classList.remove('done');
+            } else {
+                cell.classList.add('done');
+            }
             showError(t('markSaveError'));
-            console.error('Ошибка HTTP:', response.status);
         }
     } catch (error) {
-        showError(t('markSaveError'));
         console.error('Ошибка в toggleDay:', error);
+        // Откатываем UI при ошибке
+        if (cell) {
+            if (newStatus === 1) {
+                cell.classList.remove('done');
+            } else {
+                cell.classList.add('done');
+            }
+        }
+        showError(t('markSaveError'));
     }
 }
 
 function renderStats(weekStats, monthStats, habitData) {
-    const streak = habitData?.streak || { current: 0, max: 0 };
+    // Streak может быть в habitData, weekStats или monthStats
+    const rawStreak = habitData?.streak || weekStats?.streak || monthStats?.streak || {};
     
-    console.log('renderStats викликано з:', { weekStats, monthStats, habitData });
-    console.log('Streak:', streak);
+    // Нормалізуємо streak з дефолтними значеннями
+    const streak = {
+        current: rawStreak.current || 0,
+        max: rawStreak.max || 0,
+        average: rawStreak.average || 0,
+        total_completed: rawStreak.total_completed || 0
+    };
     
-    
+    console.log('=== STREAK DATA ===');
+    console.log('rawStreak:', rawStreak);
+    console.log('normalized streak:', streak);
+    console.log('==================');
     
     const safeWeekStats = {
         completed_days: weekStats?.completed_days || 0,
@@ -1879,38 +2085,280 @@ function renderStats(weekStats, monthStats, habitData) {
         adherence_percent: monthStats?.adherence_percent || 0
     };
     
+    // Загальний відсоток виконання (Completion Rate)
+    const overallCR = safeMonthStats.total_days > 0 
+        ? Math.round((safeMonthStats.completed_days / safeMonthStats.total_days) * 100) 
+        : 0;
+    
     console.log('safeWeekStats:', safeWeekStats);
     console.log('safeMonthStats:', safeMonthStats);
     
     statsPanel.innerHTML = `
+        <!-- Головний блок з поточною серією -->
         <div class="streak-display">
             <span class="streak-number">${streak.current}</span>
-            <div class="streak-label">${t('currentStreak')}</div>
+            <div class="streak-label">🔥 ${t('currentStreak')}</div>
         </div>
         
-        <div class="stats-grid">
-            <div class="stat-item">
-                <span class="stat-label">${t('week')}</span>
-                <span class="stat-value">${safeWeekStats.completed_days}/${safeWeekStats.total_days}</span>
+        <!-- Блок серій -->
+        <div class="stats-section">
+            <h4 class="stats-section-title">📊 ${t('streakStats')}</h4>
+            <div class="stats-grid-compact">
+                <div class="stat-item-compact">
+                    <span class="stat-icon">🏆</span>
+                    <div class="stat-content">
+                        <span class="stat-value-large">${streak.max}</span>
+                        <span class="stat-label-small">${t('longestStreak')}</span>
+                    </div>
+                </div>
+                <div class="stat-item-compact">
+                    <span class="stat-icon">📈</span>
+                    <div class="stat-content">
+                        <span class="stat-value-large">${streak.average || 0}</span>
+                        <span class="stat-label-small">${t('averageStreak')}</span>
+                    </div>
+                </div>
+                <div class="stat-item-compact">
+                    <span class="stat-icon">✅</span>
+                    <div class="stat-content">
+                        <span class="stat-value-large">${streak.total_completed || 0}</span>
+                        <span class="stat-label-small">${t('totalCompleted')}</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">${t('month')}</span>
-                <span class="stat-value">${safeMonthStats.completed_days}/${safeMonthStats.total_days}</span>
+        </div>
+        
+        <!-- Відсоток виконання (Completion Rate) -->
+        <div class="stats-section">
+            <h4 class="stats-section-title">📈 ${t('completionRate')}</h4>
+            <div class="completion-rate-block">
+                <div class="completion-rate-circle">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg"
+                            d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="circle-progress"
+                            stroke-dasharray="${overallCR}, 100"
+                            d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                    </svg>
+                    <div class="completion-rate-text">
+                        <span class="cr-value">${overallCR}%</span>
+                        <span class="cr-label">CR</span>
+                    </div>
+                </div>
+                <div class="completion-rate-details">
+                    <div class="cr-detail-row">
+                        <span class="cr-period">${t('week')}:</span>
+                        <div class="cr-progress-bar">
+                            <div class="cr-progress-fill" style="width: ${safeWeekStats.adherence_percent}%"></div>
+                        </div>
+                        <span class="cr-percent">${Math.round(safeWeekStats.adherence_percent)}%</span>
+                    </div>
+                    <div class="cr-detail-row">
+                        <span class="cr-period">${t('month')}:</span>
+                        <div class="cr-progress-bar">
+                            <div class="cr-progress-fill" style="width: ${safeMonthStats.adherence_percent}%"></div>
+                        </div>
+                        <span class="cr-percent">${Math.round(safeMonthStats.adherence_percent)}%</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">${t('weekPercent')}</span>
-                <span class="stat-value">${Math.round(safeWeekStats.adherence_percent)}%</span>
+        </div>
+        
+        <!-- Виконання за періоди -->
+        <div class="stats-section">
+            <h4 class="stats-section-title">📅 ${t('periodStats')}</h4>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">${t('week')}</span>
+                    <span class="stat-value">${safeWeekStats.completed_days}/${safeWeekStats.total_days}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">${t('month')}</span>
+                    <span class="stat-value">${safeMonthStats.completed_days}/${safeMonthStats.total_days}</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">${t('monthPercent')}</span>
-                <span class="stat-value">${Math.round(safeMonthStats.adherence_percent)}%</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">${t('bestStreak')}</span>
-                <span class="stat-value">${streak.max} ${t('days')}</span>
+        </div>
+        
+        <!-- Календар -->
+        <div class="stats-section">
+            <h4 class="stats-section-title">${t('calendar')}</h4>
+            <div class="calendar-container" id="habitCalendar">
+                <!-- Календарь будет вставлен сюда -->
             </div>
         </div>
     `;
+    
+    // Загружаем данные для календаря
+    if (selectedHabitId) {
+        loadCalendarData(selectedHabitId);
+    }
+}
+
+// ========== КАЛЕНДАРЬ ==========
+let calendarCurrentMonth = new Date().getMonth();
+let calendarCurrentYear = new Date().getFullYear();
+let calendarData = {};
+
+async function loadCalendarData(habitId) {
+    try {
+        const response = await apiFetch(`${API_BASE}/habits/${habitId}/calendar`);
+        if (response.ok) {
+            const data = await response.json();
+            calendarData = {};
+            data.entries.forEach(entry => {
+                calendarData[entry.date] = entry.status;
+            });
+            renderCalendar();
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки календаря:', error);
+        renderCalendar(); // Рендерим пустой календарь
+    }
+}
+
+function renderCalendar() {
+    const container = document.getElementById('habitCalendar');
+    if (!container) return;
+    
+    const months = [
+        t('january'), t('february'), t('march'), t('april'),
+        t('may'), t('june'), t('july'), t('august'),
+        t('september'), t('october'), t('november'), t('december')
+    ];
+    
+    const weekDays = [
+        t('monday'), t('tuesday'), t('wednesday'), t('thursday'),
+        t('friday'), t('saturday'), t('sunday')
+    ];
+    
+    const firstDay = new Date(calendarCurrentYear, calendarCurrentMonth, 1);
+    const lastDay = new Date(calendarCurrentYear, calendarCurrentMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    
+    // День недели первого дня (0 = воскресенье, преобразуем в понедельник = 0)
+    let startingDay = firstDay.getDay() - 1;
+    if (startingDay < 0) startingDay = 6;
+    
+    let calendarHTML = `
+        <div class="calendar-header">
+            <button type="button" class="calendar-nav-btn" onclick="changeMonth(-1)">◀</button>
+            <span class="calendar-month-year">${months[calendarCurrentMonth]} ${calendarCurrentYear}</span>
+            <button type="button" class="calendar-nav-btn" onclick="changeMonth(1)">▶</button>
+        </div>
+        <div class="calendar-weekdays">
+            ${weekDays.map(day => `<div class="calendar-weekday">${day}</div>`).join('')}
+        </div>
+        <div class="calendar-days">
+    `;
+    
+    // Пустые ячейки перед первым днём
+    for (let i = 0; i < startingDay; i++) {
+        calendarHTML += '<div class="calendar-day empty"></div>';
+    }
+    
+    // Дни месяца
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = formatDate(today);
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${calendarCurrentYear}-${String(calendarCurrentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isCompleted = calendarData[dateStr] === true;
+        const isToday = dateStr === todayStr;
+        const cellDate = new Date(dateStr);
+        cellDate.setHours(0, 0, 0, 0);
+        const isFuture = cellDate > today;
+        const isPast = cellDate < today;
+        
+        let classes = 'calendar-day';
+        if (isCompleted) classes += ' completed';
+        if (isToday) classes += ' today';
+        if (isFuture) classes += ' future';
+        if (isPast) classes += ' past';
+        
+        // Тільки сьогодні можна клікати для зміни статусу
+        const isClickable = isToday;
+        
+        calendarHTML += `
+            <div class="${classes}" 
+                 data-date="${dateStr}" 
+                 ${isClickable ? `onclick="toggleCalendarDay('${dateStr}')"` : ''}
+                 style="cursor: ${isClickable ? 'pointer' : 'default'};"
+                 title="${isToday ? t('clickToMarkCompletion') : (isPast ? t('cannotMarkPast') : t('cannotMarkFuture'))}">
+                ${day}
+            </div>
+        `;
+    }
+    
+    calendarHTML += '</div>';
+    container.innerHTML = calendarHTML;
+}
+
+function changeMonth(delta) {
+    calendarCurrentMonth += delta;
+    if (calendarCurrentMonth > 11) {
+        calendarCurrentMonth = 0;
+        calendarCurrentYear++;
+    } else if (calendarCurrentMonth < 0) {
+        calendarCurrentMonth = 11;
+        calendarCurrentYear--;
+    }
+    renderCalendar();
+}
+
+async function toggleCalendarDay(dateStr) {
+    if (!selectedHabitId) return;
+    
+    // Перевірка: тільки сьогодні можна змінювати
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(dateStr);
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    if (selectedDate > today) {
+        showError(t('cannotMarkFuture') || 'Не можна відмічати майбутні дати');
+        return;
+    }
+    
+    if (selectedDate < today) {
+        showError(t('cannotMarkPast') || 'Не можна відмічати минулі дати');
+        return;
+    }
+    
+    const currentStatus = calendarData[dateStr] === true;
+    const newStatus = !currentStatus;
+    
+    try {
+        const response = await apiFetch(`${API_BASE}/habits/${selectedHabitId}/tick`, {
+            method: 'POST',
+            body: JSON.stringify({
+                date: dateStr,
+                status: newStatus
+            })
+        });
+        
+        if (response.ok) {
+            calendarData[dateStr] = newStatus;
+            renderCalendar();
+            
+            // Обновляем статистику
+            loadStats(selectedHabitId);
+            fetchHabits(); // Обновляем недельную сетку
+            
+            if (newStatus) {
+                showSuccess('✅ ' + t('habitMarked'));
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка переключения дня:', error);
+        showError(t('markSaveError'));
+    }
 }
 
 function editHabit(habitId) {
@@ -2009,15 +2457,308 @@ function editHabit(habitId) {
     openModal('editHabitModal');
 }
 
-function toggleDay(habitId, date) {
-    const cell = document.querySelector(`[data-habit-id="${habitId}"][data-date="${date}"]`);
-    if (!cell) {
-        console.error('Не найдена ячейка для привычки', habitId, 'и даты', date);
-        return;
+// ========== ШАГОМЕР ==========
+let stepCounter = {
+    steps: 0,
+    goal: 10000,
+    isSupported: false,
+    isNative: false,
+    lastReset: new Date().toDateString()
+};
+
+// Capacitor StepCounter Plugin (нативный Android)
+const StepCounter = window.Capacitor?.Plugins?.StepCounter || null;
+
+function initStepCounter() {
+    // Загружаем сохранённые данные
+    const stored = localStorage.getItem('stepCounter');
+    if (stored) {
+        stepCounter = { ...stepCounter, ...JSON.parse(stored) };
     }
     
-    const isDone = cell.classList.contains('done');
-    toggleEntry(habitId, date, !isDone);
+    // Проверяем, нужно ли сбросить счётчик (новый день)
+    const today = new Date().toDateString();
+    if (stepCounter.lastReset !== today) {
+        stepCounter.steps = 0;
+        stepCounter.lastReset = today;
+        saveStepCounter();
+    }
+    
+    // Приоритет: нативный Android плагин > Web Accelerometer > DeviceMotion
+    if (StepCounter && window.Capacitor?.isNativePlatform()) {
+        // Нативный Android шагомер
+        initNativeStepCounter();
+    } else if ('Accelerometer' in window) {
+        stepCounter.isSupported = true;
+        startAccelerometerStepCounter();
+    } else if ('DeviceMotionEvent' in window) {
+        stepCounter.isSupported = true;
+        startDeviceMotionStepCounter();
+    } else {
+        stepCounter.isSupported = false;
+        console.log('Step counter not supported on this device');
+    }
+    
+    updateStepCounterUI();
+}
+
+async function initNativeStepCounter() {
+    try {
+        // Проверяем доступность сенсора
+        const { available } = await StepCounter.isAvailable();
+        if (!available) {
+            console.log('Native accelerometer not available, falling back to web');
+            if ('DeviceMotionEvent' in window) {
+                startDeviceMotionStepCounter();
+            }
+            return;
+        }
+        
+        stepCounter.isSupported = true;
+        stepCounter.isNative = true;
+        
+        // Запускаем нативный шагомер
+        await StepCounter.start();
+        console.log('✅ Native step counter started');
+        
+        // Получаем текущие шаги
+        const data = await StepCounter.getSteps();
+        if (data.steps > 0) {
+            stepCounter.steps = data.steps;
+            updateStepCounterUI();
+        }
+        
+        // Слушаем обновления шагов
+        StepCounter.addListener('stepUpdate', (data) => {
+            stepCounter.steps = data.steps;
+            saveStepCounter();
+            updateStepCounterUI();
+        });
+        
+    } catch (error) {
+        console.log('Native step counter error:', error);
+        // Fallback на DeviceMotion
+        if ('DeviceMotionEvent' in window) {
+            startDeviceMotionStepCounter();
+        }
+    }
+}
+
+function startAccelerometerStepCounter() {
+    try {
+        const accelerometer = new Accelerometer({ frequency: 30 });
+        let lastMagnitude = 0;
+        let stepThreshold = 12; // Порог для определения шага
+        let lastStepTime = 0;
+        
+        accelerometer.addEventListener('reading', () => {
+            const magnitude = Math.sqrt(
+                accelerometer.x ** 2 + 
+                accelerometer.y ** 2 + 
+                accelerometer.z ** 2
+            );
+            
+            const now = Date.now();
+            
+            // Определяем шаг по резкому изменению ускорения
+            if (magnitude > stepThreshold && lastMagnitude <= stepThreshold && now - lastStepTime > 300) {
+                stepCounter.steps++;
+                lastStepTime = now;
+                saveStepCounter();
+                updateStepCounterUI();
+            }
+            
+            lastMagnitude = magnitude;
+        });
+        
+        accelerometer.start();
+    } catch (error) {
+        console.log('Accelerometer error:', error);
+        startDeviceMotionStepCounter();
+    }
+}
+
+function startDeviceMotionStepCounter() {
+    let lastMagnitude = 0;
+    let lastStepTime = 0;
+    const stepThreshold = 15;
+    
+    window.addEventListener('devicemotion', (event) => {
+        const acc = event.accelerationIncludingGravity;
+        if (!acc) return;
+        
+        const magnitude = Math.sqrt(acc.x ** 2 + acc.y ** 2 + acc.z ** 2);
+        const now = Date.now();
+        
+        if (magnitude > stepThreshold && lastMagnitude <= stepThreshold && now - lastStepTime > 300) {
+            stepCounter.steps++;
+            lastStepTime = now;
+            saveStepCounter();
+            updateStepCounterUI();
+        }
+        
+        lastMagnitude = magnitude;
+    }, true);
+}
+
+function saveStepCounter() {
+    localStorage.setItem('stepCounter', JSON.stringify(stepCounter));
+}
+
+function updateStepCounterUI() {
+    const stepsDisplay = document.getElementById('stepsToday');
+    const progressBar = document.getElementById('stepsProgress');
+    const stepGoalDisplay = document.getElementById('stepGoal');
+    const stepsPercentDisplay = document.getElementById('stepsPercent');
+    const stepsRemainingValue = document.getElementById('stepsRemainingValue');
+    const stepsRemainingContainer = document.getElementById('stepsRemaining');
+    
+    const progress = Math.min((stepCounter.steps / stepCounter.goal) * 100, 100);
+    const remaining = Math.max(stepCounter.goal - stepCounter.steps, 0);
+    const isCompleted = stepCounter.steps >= stepCounter.goal;
+    
+    if (stepsDisplay) {
+        stepsDisplay.textContent = stepCounter.steps.toLocaleString();
+    }
+    
+    if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+        progressBar.style.background = isCompleted ? 'var(--success)' : 'var(--accent-gradient)';
+    }
+    
+    if (stepGoalDisplay) {
+        stepGoalDisplay.textContent = stepCounter.goal.toLocaleString();
+    }
+    
+    if (stepsPercentDisplay) {
+        stepsPercentDisplay.textContent = `${Math.round(progress)}%`;
+        stepsPercentDisplay.classList.toggle('completed', isCompleted);
+    }
+    
+    if (stepsRemainingValue) {
+        stepsRemainingValue.textContent = remaining.toLocaleString();
+    }
+    
+    if (stepsRemainingContainer) {
+        stepsRemainingContainer.style.display = isCompleted ? 'none' : 'block';
+    }
+}
+
+function setStepGoal(goal) {
+    const parsedGoal = parseInt(goal);
+    if (parsedGoal && parsedGoal > 0) {
+        stepCounter.goal = parsedGoal;
+        saveStepCounter();
+        updateStepCounterUI();
+        showSuccess(`${t('stepsGoal')}: ${parsedGoal.toLocaleString()}`);
+    } else {
+        showError(t('invalidGoal'));
+    }
+}
+
+function openSetGoalModal() {
+    // Створюємо модальне вікно для введення цілі
+    const existingModal = document.getElementById('stepGoalModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'stepGoalModal';
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+        <div class="modal" style="max-width: 350px;">
+            <div class="modal-header">
+                <h3 class="modal-title">🎯 ${t('setGoal')}</h3>
+                <button class="modal-close" onclick="closeSetGoalModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">${t('enterStepGoal')}:</label>
+                <input type="number" id="stepGoalInput" class="form-input" 
+                       value="${stepCounter.goal}" min="100" max="100000" step="100"
+                       placeholder="10000"
+                       style="font-size: 1.5rem; text-align: center; padding: 16px;">
+                <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">
+                    ${t('defaultGoal') || 'За замовчуванням: 10,000 кроків'}
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeSetGoalModal()" style="flex: 1;">${t('cancel')}</button>
+                <button class="btn btn-primary" onclick="confirmSetGoal()" style="flex: 1;">✅ ${t('save')}</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Фокус на інпут
+    setTimeout(() => {
+        const input = document.getElementById('stepGoalInput');
+        if (input) {
+            input.focus();
+            input.select();
+        }
+    }, 100);
+    
+    // Закриття по кліку на оверлей
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeSetGoalModal();
+        }
+    });
+    
+    // Закриття по Enter
+    const input = document.getElementById('stepGoalInput');
+    if (input) {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                confirmSetGoal();
+            }
+        });
+    }
+}
+
+function closeSetGoalModal() {
+    const modal = document.getElementById('stepGoalModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function confirmSetGoal() {
+    const input = document.getElementById('stepGoalInput');
+    if (input) {
+        const goal = input.value;
+        setStepGoal(goal);
+        closeSetGoalModal();
+    }
+}
+
+// ========== УЛУЧШЕННАЯ СТАТИСТИКА ПОЛЬЗОВАТЕЛЯ ==========
+async function updateUserStats() {
+    if (!currentUser) return;
+    
+    try {
+        const response = await apiFetch(`${API_BASE}/user/stats`);
+        if (response.ok) {
+            const stats = await response.json();
+            
+            // Обновляем UI
+            const totalHabitsEl = document.getElementById('totalHabits');
+            const completedTodayEl = document.getElementById('completedToday');
+            const longestStreakEl = document.getElementById('longestStreak');
+            const userHabitsCountEl = document.getElementById('userHabitsCount');
+            const userStreakEl = document.getElementById('userStreak');
+            
+            if (totalHabitsEl) totalHabitsEl.textContent = stats.total_habits || 0;
+            if (completedTodayEl) completedTodayEl.textContent = stats.completed_today || 0;
+            if (longestStreakEl) longestStreakEl.textContent = stats.longest_streak || 0;
+            if (userHabitsCountEl) userHabitsCountEl.textContent = stats.total_habits || 0;
+            if (userStreakEl) userStreakEl.textContent = stats.current_streak || 0;
+        }
+    } catch (error) {
+        console.log('Ошибка загрузки статистики:', error);
+    }
 }
 
 
@@ -2025,7 +2766,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initCategories();
     initUserProgress(); 
     checkAuth(); 
+    initStepCounter(); // Инициализация шагомера
     
+    // Показываем шагомер если поддерживается
+    const stepSection = document.getElementById('stepCounterSection');
+    if (stepSection && stepCounter.isSupported) {
+        stepSection.style.display = 'block';
+    }
     
     initProfileEditing();
     
@@ -2335,6 +3082,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.closest('.day-cell')) {
                 e.stopPropagation();
                 const cell = e.target.closest('.day-cell');
+                
+                // Ігноруємо кліки на майбутні дати
+                if (cell.classList.contains('future') || cell.classList.contains('disabled')) {
+                    showError(t('cannotMarkFuture') || 'Не можна відмічати майбутні дати');
+                    return;
+                }
+                
+                // Ігноруємо кліки на минулі дати (тільки сьогодні!)
+                if (cell.classList.contains('past')) {
+                    showError(t('cannotMarkPast') || 'Не можна відмічати минулі дати');
+                    return;
+                }
+                
                 const habitId = cell.dataset.habitId; 
                 const date = cell.dataset.date;
                 
@@ -2559,6 +3319,9 @@ function updateProfileUI() {
         
         
         updateProfileDisplay();
+        
+        // Оновлюємо відображення рівня та звання
+        updateLevelDisplay();
         
         
         const settingsUsername = document.getElementById('settingsUsername');
@@ -2854,34 +3617,8 @@ function updateAvatarUI() {
 }
 
 
-function updateUserStats() {
-    const totalHabits = habits.length;
-    
-    
-    const today = formatDate(new Date());
-    let completedToday = 0;
-    
-    habits.forEach(habit => {
-        
-        if (habit.entries && habit.entries.some(entry => entry.date === today && entry.status === 1)) {
-            completedToday++;
-        }
-    });
-    
-    
-    let longestStreak = 0;
-    habits.forEach(habit => {
-        if (habit.streak && habit.streak.max > longestStreak) {
-            longestStreak = habit.streak.max;
-        }
-    });
-    
-    document.getElementById('userHabitsCount').textContent = totalHabits;
-    document.getElementById('totalHabits').textContent = totalHabits;
-    document.getElementById('completedToday').textContent = completedToday;
-    document.getElementById('longestStreak').textContent = longestStreak;
-    document.getElementById('userStreak').textContent = longestStreak;
-}
+// updateUserStats визначена вище як async функція, ця дублікатна видалена
+// Використовуй updateUserStats() з рядка 2735
 
 
 function toggleUserProfile() {
@@ -3824,3 +4561,69 @@ function setCurrentUser(user) {
     }
     updateProfileUI();
 }
+
+// ========================================
+// СИСТЕМА НАГОРОД ТА БЕЙДЖІВ
+// ========================================
+
+// Відкриття модалки нагород
+function openAwardsModal() {
+    updateAwardsDisplay();
+    openModal('awardsModal');
+}
+
+// Оновлення відображення нагород
+function updateAwardsDisplay() {
+    const currentLevel = getCurrentLevel();
+    
+    // Оновлюємо загальний прогрес
+    document.getElementById('totalXP').textContent = `${userProgress.xp} XP`;
+    document.getElementById('currentLevelText').textContent = `${currentLevel.name} (${currentLevel.level})`;
+    document.getElementById('totalCompleted').textContent = userProgress.totalHabitsCompleted;
+    document.getElementById('bestStreak').textContent = `${userProgress.longestStreak} ${t('days')}`;
+    
+    // Отримані бейджі
+    const earnedBadgesEl = document.getElementById('earnedBadges');
+    const earnedBadges = userProgress.earnedBadges || [];
+    
+    if (earnedBadges.length === 0) {
+        earnedBadgesEl.innerHTML = `
+            <div class="empty-state" style="padding: 20px; text-align: center;">
+                <p style="color: var(--text-muted);">${t('noAwards')}</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">${t('keepGoing')}</p>
+            </div>
+        `;
+    } else {
+        earnedBadgesEl.innerHTML = earnedBadges.map(badgeId => {
+            const badge = badges[badgeId];
+            if (!badge) return '';
+            return `
+                <div class="badge-item earned">
+                    <span class="badge-emoji">${badge.emoji}</span>
+                    <div class="badge-title">${badge.name}</div>
+                    <div class="badge-desc">${badge.description}</div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Доступні (заблоковані) бейджі
+    const availableBadgesEl = document.getElementById('availableBadges');
+    const lockedBadges = Object.values(badges).filter(b => !earnedBadges.includes(b.id));
+    
+    availableBadgesEl.innerHTML = lockedBadges.map(badge => `
+        <div class="badge-item locked">
+            <span class="badge-emoji">${badge.emoji}</span>
+            <div class="badge-title">${badge.name}</div>
+            <div class="badge-desc">${badge.description}</div>
+        </div>
+    `).join('');
+}
+
+// Додаємо кнопку нагород в header якщо її немає
+// ВИДАЛЕНО - кнопка вже є в HTML
+
+// Ініціалізація системи нагород при завантаженні
+document.addEventListener('DOMContentLoaded', function() {
+    // Кнопка нагород вже є в HTML, нічого додавати не потрібно
+});
