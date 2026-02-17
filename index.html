@@ -184,6 +184,34 @@
                 </div>
                 
                 <div class="form-group">
+                    <label class="form-label" data-i18n="time">Час</label>
+                    <div class="time-selector">
+                        <input type="text" class="form-input" id="habitTime" data-i18n-placeholder="selectTime" placeholder="Оберіть час" readonly onclick="toggleTimeDropdown()">
+                        <div class="time-dropdown" id="timeDropdown">
+                            <div class="time-picker">
+                                <div class="time-column">
+                                    <div class="time-label" data-i18n="hours">Година</div>
+                                    <div class="time-values" id="hourValues"></div>
+                                </div>
+                                <div class="time-separator">:</div>
+                                <div class="time-column">
+                                    <div class="time-label" data-i18n="minutes">Хвилини</div>
+                                    <div class="time-values" id="minuteValues"></div>
+                                </div>
+                            </div>
+                            <div class="time-actions">
+                                <button type="button" class="btn btn-secondary" onclick="clearTime()">
+                                    <span data-i18n="clear">Очистити</span>
+                                </button>
+                                <button type="button" class="btn" onclick="confirmTime()">
+                                    <span data-i18n="done">Готово</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
                     <label class="form-label" data-i18n="reminder">Нагадування</label>
                     <div class="reminder-selector">
                         <input type="text" class="form-input" id="reminderType" data-i18n-placeholder="selectReminderType" placeholder="Оберіть тип нагадування" readonly onclick="toggleReminderDropdown()">
@@ -298,6 +326,34 @@
                 <div class="form-group">
                     <label class="form-label" data-i18n="description">Опис</label>
                     <textarea class="form-textarea" id="editHabitDesc" data-i18n-placeholder="descriptionPlaceholder" placeholder="Короткий опис (необов'язково)"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" data-i18n="time">Час</label>
+                    <div class="time-selector">
+                        <input type="text" class="form-input" id="editHabitTime" data-i18n-placeholder="selectTime" placeholder="Оберіть час" readonly onclick="toggleEditTimeDropdown()">
+                        <div class="time-dropdown" id="editTimeDropdown">
+                            <div class="time-picker">
+                                <div class="time-column">
+                                    <div class="time-label" data-i18n="hours">Година</div>
+                                    <div class="time-values" id="editHourValues"></div>
+                                </div>
+                                <div class="time-separator">:</div>
+                                <div class="time-column">
+                                    <div class="time-label" data-i18n="minutes">Хвилини</div>
+                                    <div class="time-values" id="editMinuteValues"></div>
+                                </div>
+                            </div>
+                            <div class="time-actions">
+                                <button type="button" class="btn btn-secondary" onclick="clearEditTime()">
+                                    <span data-i18n="clear">Очистити</span>
+                                </button>
+                                <button type="button" class="btn" onclick="confirmEditTime()">
+                                    <span data-i18n="done">Готово</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -849,7 +905,7 @@
             
             <div class="modal-actions">
                 <button type="button" class="btn" onclick="closeModal('awardsModal')">
-                    ✓ Закрыть
+                    <span data-i18n="close">Close</span>
                 </button>
             </div>
         </div>
