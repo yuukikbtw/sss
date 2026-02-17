@@ -452,7 +452,7 @@ def _cors_origin():
     if config['api']['debug']:
         return origin if origin else '*'
     if origin and any(origin.startswith(p) for p in (
-        'http://localhost', 'http://127.0.0.1', 'http://192.168.', 'http://10.0.',
+        'http://localhost', 'http://0.0.0.0', 'http://192.168.', 'http://10.0.',
         'capacitor://', 'ionic://')):
         return origin
     return ALLOWED_ORIGIN
@@ -874,3 +874,4 @@ if __name__ == "__main__":
     print(f"API: http://{host}:{port}/api")
 
     app.run(debug=config["api"]["debug"], port=port, host=host, use_reloader=False)
+
