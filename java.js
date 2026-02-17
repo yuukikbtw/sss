@@ -1345,20 +1345,21 @@ function switchAuthMode(mode) {
 
 async function login(email, password) {
     try {
+        console.log('[LOGIN] Starting login for:', email);
         const response = await apiFetch(`${API_BASE}/login`, {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
         
         const data = await response.json();
-        console.log('🔐 Ответ логина:', { status: response.status, token: data.token ? 'получен' : 'не получен', user: data.user?.email });
+        console.log('[LOGIN] Response status:', response.status, 'Token received:', !!data.token);
         
         if (response.ok) {
             currentUser = data.user;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             if (data.token) {
                 localStorage.setItem('authToken', data.token);
-                console.log('✅ Токен сохранён в localStorage:', data.token.substring(0, 20) + '...');
+                console.log('[LOGIN] Token saved');
             }
             
             
@@ -1375,14 +1376,17 @@ async function login(email, password) {
             updateUIForLoggedInUser();
             closeModal('authModal');
             showSuccess(data.message);
+            console.log('[LOGIN] Fetching habits...');
             await fetchHabits();
+            console.log('[LOGIN] Loading progress...');
             await loadUserProgress();
+            console.log('[LOGIN] Login complete');
         } else {
             showError(data.error);
         }
     } catch (error) {
         showError(t('networkError'));
-        console.error(error);
+        console.error('[LOGIN] Error:', error);
     }
 }
 
@@ -1435,35 +1439,45 @@ async function logout() {
 
 async function checkAuth() {
     try {
+        console.log('[AUTH] Checking authentication...');
         const response = await apiFetch(`${API_BASE}/me`);
         updateConnectionStatus(true);
         
         if (response.ok) {
             const data = await response.json();
+            console.log('[AUTH] User authenticated:', data.user?.email);
             currentUser = data.user;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             updateUIForLoggedInUser();
+            console.log('[AUTH] Fetching habits...');
             await fetchHabits();
+            console.log('[AUTH] Loading user progress...');
             await loadUserProgress();
+            console.log('[AUTH] All data loaded');
             return;
         }
     } catch (error) {
+        console.error('[AUTH] Error checking auth:', error);
         updateConnectionStatus(false);
     }
     
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
         try {
+            console.log('[AUTH] Using stored user data');
             currentUser = JSON.parse(storedUser);
             updateUIForLoggedInUser();
             await fetchHabits();
             await loadUserProgress();
+            console.log('[AUTH] All data loaded from storage');
             return;
         } catch (error) {
+            console.error('[AUTH] Error loading stored user:', error);
             localStorage.removeItem('currentUser');
         }
     }
     
+    console.log('[AUTH] No authentication found, showing guest mode');
     updateUIForLoggedOutUser();
 }
 
@@ -1471,19 +1485,21 @@ async function loadUserProgress() {
     try {
         const token = localStorage.getItem('authToken');
         if (!token) {
-            console.warn('No auth token found');
+            console.warn('[PROGRESS] No auth token found');
             return;
         }
         
         const response = await apiFetch(`${API_BASE}/user/progress`);
+        console.log('[PROGRESS API] Response status:', response.status);
         
         if (!response.ok) {
-            console.error('Progress API returned:', response.status);
+            console.error('[PROGRESS API] Error returned:', response.status);
             return;
         }
         
         const data = await response.json();
-        console.log('✅ Progress loaded:', data);
+        console.log('[PROGRESS API] Raw data from server:', data);
+        console.log('[PROGRESS API] XP:', data.xp, 'Level:', data.level, 'Badges:', data.earned_badges);
         
         userProgress.xp = data.xp || 0;
         userProgress.level = data.level || 1;
@@ -1491,24 +1507,32 @@ async function loadUserProgress() {
         userProgress.longestStreak = data.longest_streak || 0;
         userProgress.earnedBadges = data.earned_badges || [];
         
+        console.log('[PROGRESS] Updated userProgress object:', userProgress);
+        
         if (document.getElementById('userLevel')) {
             document.getElementById('userLevel').innerHTML = `
                 <span class="level-emoji">${data.level_emoji || '⭐'}</span>
                 <span class="level-name">${data.level_name || 'Level'}</span>
                 <span class="level-number">Lvl ${data.level}</span>
             `;
+            console.log('[PROGRESS UI] Updated userLevel element');
+        } else {
+            console.warn('[PROGRESS UI] userLevel element not found');
         }
         
         if (document.getElementById('userHabitsCount')) {
             document.getElementById('userHabitsCount').textContent = data.total_completed || 0;
+            console.log('[PROGRESS UI] Updated userHabitsCount:', data.total_completed);
         }
         
         displayBadges(data.earned_badges || []);
+        console.log('[PROGRESS] Displayed badges');
         
         updateLevelDisplay();
+        console.log('[PROGRESS] Called updateLevelDisplay()');
         
     } catch (error) {
-        console.error('Error loading progress:', error);
+        console.error('[PROGRESS] Error loading progress:', error);
     }
 }
 
@@ -2846,11 +2870,10 @@ async function updateUserStats() {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initCategories();
-    initUserProgress(); 
-    checkAuth(); 
     initStepCounter();
+    console.log('[INIT] Initializing...');
     
     const stepSection = document.getElementById('stepCounterSection');
     if (stepSection && stepCounter.isSupported) {
@@ -2858,6 +2881,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     initProfileEditing();
+    
+    // Загружаем все данные пользователя
+    console.log('[INIT] Calling checkAuth...');
+    await checkAuth();
+    console.log('[INIT] checkAuth completed');
     
     // Начальная проверка соединения и регулярная проверка каждые 5 секунд
     (async () => {
