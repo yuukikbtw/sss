@@ -1483,11 +1483,7 @@ async function checkAuth() {
 
 async function loadUserProgress() {
     try {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-            console.warn('[PROGRESS] No auth token found');
-            return;
-        }
+        console.log('[PROGRESS] Loading user progress...');
         
         const response = await apiFetch(`${API_BASE}/user/progress`);
         console.log('[PROGRESS API] Response status:', response.status);
