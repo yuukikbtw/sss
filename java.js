@@ -2869,14 +2869,17 @@ async function updateUserStats() {
 document.addEventListener('DOMContentLoaded', async () => {
     initCategories();
     initStepCounter();
+
+    initUserProfile();
+    initProfileEditing();
+
     console.log('[INIT] Initializing...');
     
     const stepSection = document.getElementById('stepCounterSection');
     if (stepSection && stepCounter.isSupported) {
         stepSection.style.display = 'block';
     }
-    
-    initProfileEditing();
+
     
     // Загружаем все данные пользователя
     console.log('[INIT] Calling checkAuth...');
@@ -3467,27 +3470,28 @@ const avatarEmojis = [
 
 
 function initUserProfile() {
-    
+    // Загружаем сохраненные настройки
     const stored = localStorage.getItem('userSettings');
     if (stored) {
         userSettings = { ...userSettings, ...JSON.parse(stored) };
     }
     
-    
+    // Теперь обновляем UI с загруженными настройками
     updateProfileUI();
     applyUserSettings();
 }
 
-
 function updateProfileUI() {
     if (currentUser) {
-        
+        // Обновляем аватар ДО всего остального
         updateAvatarUI();
         
-        
+        // Остальное...
         document.getElementById('userName').textContent = currentUser.username;
         document.getElementById('profileName').textContent = currentUser.username;
         document.getElementById('profileEmail').textContent = currentUser.email;
+        
+        // ...rest of the function
         
         
         updateProfileDisplay();
