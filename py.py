@@ -16,7 +16,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def load_config():
     defaults = {
-        "api": {"port": 5001, "host": "0.0.0.0", "debug": True},
+        "api": {"port": 5001, "host": "0.0.0.0", "debug": False},
         "database": {"connection_string": "mongodb://localhost:27017"}
     }
     path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -868,10 +868,9 @@ def health():
     })
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", config["api"]["port"]))
-    host = config["api"]["host"]
     init_db()
-    print(f"API: http://{host}:{port}/api")
+    port = int(os.environ.get("PORT", 10000))
+    print(f"API running on 0.0.0.0:{port}")
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
 
-    app.run(debug=config["api"]["debug"], port=port, host=host, use_reloader=False)
 
