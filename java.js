@@ -43,6 +43,33 @@ function updateConnectionStatus(online) {
     console.log(online ? '[ONLINE] ' + t('online') : '[OFFLINE] ' + t('offline'));
 }
 
+// Проверка доступности сервера
+async function checkServerAvailability() {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const testUrl = `${API_BASE}/me`;
+        console.log('[CHECK] Проверяем сервер:', testUrl);
+        
+        const response = await fetch(testUrl, { 
+            method: 'HEAD',
+            signal: controller.signal,
+            cache: 'no-store',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+            }
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('✅ [CHECK] Сервер доступен, статус:', response.status);
+        return true;
+    } catch (error) {
+        console.warn('⚠️ [CHECK] Сервер недоступен -', error.message);
+        return false;
+    }
+}
+
 
 async function apiFetch(url, options = {}) {
     let token = null;
@@ -168,16 +195,18 @@ let userProgress = {
 
 
 function initUserProgress() {
-    const stored = localStorage.getItem('userProgress');
-    if (stored) {
-        userProgress = { ...userProgress, ...JSON.parse(stored) };
-    }
+    // Прогресс загружается с сервера через loadUserProgress()
+    // Не используем localStorage для прогресса
     updateLevelDisplay();
 }
 
 
-function saveUserProgress() {
-    localStorage.setItem('userProgress', JSON.stringify(userProgress));
+async function saveUserProgress() {
+    // Прогресс сохраняется автоматически на сервере
+    // Просто загружаем актуальные данные
+    if (currentUser) {
+        await loadUserProgress();
+    }
 }
 
 
@@ -198,7 +227,7 @@ function calculateXP(habit) {
 }
 
 
-function awardXP(amount) {
+async function awardXP(amount) {
     const oldLevel = userProgress.level;
     userProgress.xp += amount;
     
@@ -210,7 +239,7 @@ function awardXP(amount) {
     }
     
     updateLevelDisplay();
-    saveUserProgress();
+    await saveUserProgress();
 }
 
 
@@ -301,7 +330,7 @@ function checkBadges(habit, completedTime) {
     });
     
     if (newBadges.length > 0) {
-        saveUserProgress();
+        saveUserProgress(); // Async call - will update from server
     }
 }
 
@@ -1643,7 +1672,7 @@ async function createHabit(data) {
             });
             
             
-            awardXP(5);
+            await awardXP(5);
             setTimeout(() => {
                 showXPNotification(5);
             }, 300);
@@ -2056,7 +2085,7 @@ async function toggleDay(habitId, date) {
                     }
                     
                     const earnedXP = calculateXP(habit);
-                    awardXP(earnedXP);
+                    await awardXP(earnedXP);
                     checkBadges(habit, new Date());
                     
                     setTimeout(() => {
@@ -2087,6 +2116,8 @@ async function toggleDay(habitId, date) {
             }
             
             updateUserStats();
+            // Загружаем обновленный прогресс с сервера
+            await loadUserProgress();
         } else {
             console.error('Сервер вернул ошибку:', response.status);
             if (newStatus === 1) {
@@ -2909,6 +2940,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     initProfileEditing();
+    
+    // Начальная проверка соединения и регулярная проверка каждые 5 секунд
+    (async () => {
+        const isOnline = await checkServerAvailability();
+        updateConnectionStatus(isOnline);
+    })();
+    
+    // Регулярная проверка соединения каждые 5 секунд
+    if (serverCheckInterval) clearInterval(serverCheckInterval);
+    serverCheckInterval = setInterval(async () => {
+        const isOnline = await checkServerAvailability();
+        updateConnectionStatus(isOnline);
+    }, 5000);
+    
+    // Также проверяем при online/offline событиях браузера
+    window.addEventListener('online', async () => {
+        console.log('[EVENT] Браузер вернулся в онлайн');
+        const isOnline = await checkServerAvailability();
+        updateConnectionStatus(isOnline);
+    });
+    
+    window.addEventListener('offline', () => {
+        console.log('[EVENT] Браузер отключился');
+        updateConnectionStatus(false);
+    });
+    
+    // Проверяем видимость страницы - когда пользователь возвращается, проверяем соединение
+    document.addEventListener('visibilitychange', async () => {
+        if (!document.hidden) {
+            console.log('[EVENT] Страница вернулась в фокус, проверяем соединение');
+            const isOnline = await checkServerAvailability();
+            updateConnectionStatus(isOnline);
+        }
+    });
     
     
     document.addEventListener('keydown', (e) => {
