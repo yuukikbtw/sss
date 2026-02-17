@@ -1458,6 +1458,11 @@ main.guest-mode .panel {
         gap: 16px;
     }
     
+    /* На мобильных - шагомер в начале (боковая панель показывается первой) */
+    main aside.panel {
+        order: -1;
+    }
+    
     .panel {
         padding: 16px;
     }
@@ -1579,6 +1584,23 @@ main.guest-mode .panel {
     
     .stat-card {
         padding: 16px;
+    }
+    
+    /* Оптимизация шагомера для планшетов */
+    .step-counter-container {
+        margin-bottom: 16px;
+    }
+    
+    .step-counter-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .step-counter-actions .btn {
+        flex: 1;
+        min-width: 120px;
+        font-size: 0.9rem;
     }
 }
 
@@ -1719,6 +1741,33 @@ main.guest-mode .panel {
         padding: 12px;
     }
     
+    /* Оптимизация шагомера для мобильных */
+    .step-counter-container {
+        padding: 12px;
+    }
+    
+    .step-counter-header {
+        margin-bottom: 8px;
+    }
+    
+    .step-counter-value {
+        font-size: 32px;
+    }
+    
+    .step-counter-label {
+        font-size: 0.9rem;
+    }
+    
+    .step-counter-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .step-counter-actions .btn {
+        width: 100%;
+        font-size: 0.85rem;
+        padding: 10px;
+    }
     
     .habit-card:hover {
         transform: none;
@@ -3407,6 +3456,36 @@ body.light-theme .notification.info {
     .stat-label-small {
         font-size: 0.5rem;
     }
+
+    /* Оптимизация шагомера для очень узких экранов */
+    .step-counter-container {
+        padding: 12px;
+    }
+    
+    .step-counter-header {
+        margin-bottom: 8px;
+    }
+    
+    .step-counter-icon {
+        font-size: 28px;
+    }
+    
+    .step-counter-value {
+        font-size: 28px;
+    }
+    
+    .step-counter-label {
+        font-size: 0.85rem;
+    }
+    
+    .step-progress-bar {
+        height: 6px;
+    }
+    
+    .step-goal-info {
+        flex-direction: column;
+        align-items: center;
+    }
 }
 
 /* ========== КАЛЕНДАРЬ ========== */
@@ -3681,7 +3760,6 @@ body.light-theme .notification.info {
     font-size: 0.85rem;
 }
 
-/* ========== УЛУЧШЕННЫЕ СТИЛИ СТАТИСТИКИ ========== */
 .stats-section {
     margin-bottom: 24px;
     overflow: hidden;

@@ -1,35 +1,37 @@
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
-from bson import ObjectId
-from datetime import date, datetime, timedelta
-from typing import Optional, Dict, List
-from flask import Flask, jsonify, request, session
-from werkzeug.security import generate_password_hash, check_password_hash
 import json
 import os
-import secrets
 import time
 import hmac
 import hashlib
+from datetime import date, datetime, timedelta
+from typing import Optional, Dict, List
 
+from bson import ObjectId
+from flask import Flask, jsonify, request, session
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+from werkzeug.security import generate_password_hash, check_password_hash
 
-# Загружаем конфигурацию
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 def load_config():
-    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    defaults = {
+        "api": {"port": 5001, "host": "127.0.0.1", "debug": True},
+        "database": {"connection_string": "mongodb://localhost:27017"}
+    }
+    path = os.path.join(os.path.dirname(__file__), 'config.json')
     try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        # Конфигурация по умолчанию, если файла нет
-        return {
-            "api": {"port": 5001, "host": "0.0.0.0", "debug": True},
-            # Никогда не хардкодим реальные креды в коде. Используй переменную окружения MONGODB_URI.
-            "database": {"connection_string": "mongodb://localhost:27017"}
-        }
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        if isinstance(data.get("api"), dict):
+            defaults["api"].update(data["api"])
+        if isinstance(data.get("database"), dict):
+            defaults["database"].update(data["database"])
+        return defaults
+    except (FileNotFoundError, json.JSONDecodeError):
+        return defaults
 
 config = load_config()
-
-# MongoDB connection (env override)
 uri = os.environ.get("MONGODB_URI", config["database"]["connection_string"])
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client['habits_tracker']
@@ -39,27 +41,21 @@ users_collection = db['users']
 
 
 
-# ---------- DB ----------
 def init_db():
     try:
         client.admin.command('ping')
-        print("Pinged your deployment. You successfully connected to MongoDB!")
-        # Создаем индексы для производительности
         try:
             entries_collection.create_index([("habit_id", 1), ("date", 1)], unique=True)
             habits_collection.create_index([("is_active", 1)])
             habits_collection.create_index([("user_id", 1)])
             users_collection.create_index([("email", 1)], unique=True)
             users_collection.create_index([("username", 1)], unique=True)
-            print("Индексы созданы успешно!")
-        except Exception as e:
-            print(f"Ошибка создания индексов (возможно уже существуют): {e}")
+        except Exception:
+            pass
     except Exception as e:
-        print(f"MongoDB connection error: {e}")
+        print(f"MongoDB: {e}")
 
-# ---------- Users ----------
 def create_user(username: str, email: str, password: str) -> Dict:
-    # Безопасное хранение пароля (Werkzeug) + базовая валидация.
     user_doc = {
         "username": username.strip(),
         "email": email.strip().lower(),
@@ -84,7 +80,6 @@ def create_user(username: str, email: str, password: str) -> Dict:
         raise ValueError(f"Ошибка создания пользователя: {str(e)}")
 
 def authenticate_user(email: str, password: str) -> Optional[Dict]:
-    # Backward-compatible: если старые записи имеют 'password'. Новые используют 'password_hash'.
     user = users_collection.find_one({"email": email.strip().lower()})
     if not user:
         return None
@@ -94,12 +89,11 @@ def authenticate_user(email: str, password: str) -> Optional[Dict]:
             valid = check_password_hash(user['password_hash'], password)
         except Exception:
             valid = False
-    elif 'password' in user:  # legacy fallback
+    elif 'password' in user:
         valid = (user['password'] == password)
     if not valid:
         return None
     user["id"] = str(user["_id"])
-    # Очистка чувствительных полей
     for sensitive in ("_id", "password", "password_hash"):
         if sensitive in user:
             del user[sensitive]
@@ -117,7 +111,6 @@ def get_user_by_id(user_id: str) -> Optional[Dict]:
     except Exception:
         return None
 
-# ---------- Repository ----------
 def create_habit(name: str, description: str, user_id: str, time: Optional[str] = None, category: Optional[str] = None, reminder: Optional[dict] = None) -> Dict:
     habit_doc = {
         "name": name.strip(),
@@ -144,7 +137,7 @@ def get_habit(habit_id: str, user_id: str) -> Optional[Dict]:
             habit["id"] = str(habit["_id"])
             del habit["_id"]
         return habit
-    except:
+    except Exception:
         return None
 
 def list_habits(user_id: str) -> List[Dict]:
@@ -155,7 +148,6 @@ def list_habits(user_id: str) -> List[Dict]:
     for habit in habits:
         habit["id"] = str(habit["_id"])
         del habit["_id"]
-        # Добавляем streak для каждой привычки
         habit["streak"] = streaks(habit["id"])
     
     return habits
@@ -172,20 +164,17 @@ def update_habit(habit_id: str, name: str, description: str, user_id: str) -> Op
         if result.matched_count == 0:
             return None
         return get_habit(habit_id, user_id)
-    except:
+    except Exception:
         return None
 
 def delete_habit(habit_id: str, user_id: str) -> bool:
     try:
-        print(f"Удаление привычки: ID={habit_id}, user_id={user_id}")
         result = habits_collection.update_one(
             {"_id": ObjectId(habit_id), "user_id": user_id, "is_active": True},
             {"$set": {"is_active": False}}
         )
-        print(f"Результат удаления: matched_count={result.matched_count}")
         return result.matched_count > 0
-    except Exception as e:
-        print(f"Ошибка при удалении: {e}")
+    except Exception:
         return False
 
 def upsert_entry(habit_id: str, day: date, status: bool = True, note: str = "") -> Dict:
@@ -208,8 +197,7 @@ def upsert_entry(habit_id: str, day: date, status: bool = True, note: str = "") 
     })
     
     if entry and "_id" in entry:
-        entry["_id"] = str(entry["_id"])  # Конвертируем ObjectId в строку
-    
+        entry["_id"] = str(entry["_id"])
     return entry or {"habit_id": habit_id, "date": day.isoformat(), "status": status, "note": note}
 
 def get_entries(habit_id: str, start: date, end: date) -> List[Dict]:
@@ -220,12 +208,9 @@ def get_entries(habit_id: str, start: date, end: date) -> List[Dict]:
             "$lte": end.isoformat()
         }
     }).sort("date", 1))
-    
-    # Конвертируем ObjectId в строки
     for entry in entries:
         if "_id" in entry:
             entry["_id"] = str(entry["_id"])
-    
     return entries
 
 def streaks(habit_id: str) -> Dict:
@@ -240,32 +225,24 @@ def streaks(habit_id: str) -> Dict:
     rows = [entry["date"] for entry in entries]
     ds = set(rows)
     today = date.today()
-    
-    # Поточна серія (streak від сьогодні назад)
     cur_streak = 0
     d = today
     while d.isoformat() in ds:
         cur_streak += 1
         d -= timedelta(days=1)
-    
-    # Якщо сьогодні ще не відмічено, перевіряємо вчора
     if cur_streak == 0:
         yesterday = today - timedelta(days=1)
         d = yesterday
         while d.isoformat() in ds:
             cur_streak += 1
             d -= timedelta(days=1)
-    
-    # Знаходимо всі серії
     all_streaks = []
     visited = set()
     for iso in ds:
         start_d = datetime.fromisoformat(iso).date()
         prev = start_d - timedelta(days=1)
-        # Якщо попередній день є в наборі, пропускаємо (це не початок серії)
         if prev.isoformat() in ds:
             continue
-        # Рахуємо довжину серії
         length = 0
         x = start_d
         while x.isoformat() in ds:
@@ -274,15 +251,10 @@ def streaks(habit_id: str) -> Dict:
             x += timedelta(days=1)
         if length > 0:
             all_streaks.append(length)
-    
-    # Статистика по серіям
     max_streak = max(all_streaks) if all_streaks else 0
     average_streak = round(sum(all_streaks) / len(all_streaks), 1) if all_streaks else 0
     total_streaks = len(all_streaks)
-    total_completed = len(ds)  # Загальна кількість виконаних днів
-    
-    # Completion Rate (%) - відсоток виконання за весь час
-    # Рахуємо від першого запису до сьогодні
+    total_completed = len(ds)
     if rows:
         first_date = datetime.fromisoformat(min(rows)).date()
         days_since_start = (today - first_date).days + 1
@@ -298,10 +270,8 @@ def streaks(habit_id: str) -> Dict:
         "total_completed": total_completed,
         "completion_rate": completion_rate
     }
-    print(f"[DEBUG] streaks({habit_id}) = {result}")
     return result
 
-# ---------- Stats ----------
 def period_range(kind: str):
     today = date.today()
     if kind == "week":
@@ -325,7 +295,6 @@ def compute_stats(habit_id: str, kind: str, user_id: str) -> Dict:
     created = datetime.fromisoformat(habit["created_at"]).date()
     effective_start = max(start, created)
     entries = get_entries(habit_id, effective_start, end)
-    # Исправлено: статус сохраняется как bool, а не int
     done_days = {e["date"] for e in entries if e.get("status") is True}
     total_possible = (end - effective_start).days + 1
     adherence = (len(done_days) / total_possible * 100) if total_possible > 0 else 0.0
@@ -340,12 +309,10 @@ def compute_stats(habit_id: str, kind: str, user_id: str) -> Dict:
         "entries": entries
     }
 
-# ---------- Services ----------
 def validate_date(s: Optional[str]) -> date:
     if not s:
         return date.today()
     parsed_date = datetime.fromisoformat(s).date()
-    # Заборонити відмічати майбутні дати
     if parsed_date > date.today():
         raise ValueError("Cannot mark future dates")
     return parsed_date
@@ -436,15 +403,9 @@ def habit_stats_service(habit_id: str, kind: str):
     s["streak"] = streaks(habit_id)
     return s, 200
 
-# ---------- Flask App ----------
 app = Flask(__name__, static_folder='.', static_url_path='')
-# ВАЖНО: для стабильности сессий используем один секрет, а не новый каждую перезагрузку.
-# Можно вынести в переменную окружения HABIT_SECRET, иначе fallback (НЕ для продакшена!)
 app.secret_key = os.environ.get("HABIT_SECRET", "dev-secret-change-me-32chars-long!")
 
-# ---------- Token Auth (HMAC) ----------
-# Простой токен: user_id.timestamp.signature(HMAC-SHA256)
-# Срок действия: 30 дней (как и session). Используем один секрет.
 TOKEN_EXP_SECONDS = 86400 * 30
 
 def generate_token(user_id: str) -> str:
@@ -462,7 +423,7 @@ def verify_token(token: str) -> Optional[str]:
         user_id, ts, sig = parts
         ts_int = int(ts)
         if time.time() - ts_int > TOKEN_EXP_SECONDS:
-            return None  # expired
+            return None
         msg = f"{user_id}.{ts}".encode()
         secret_bytes = app.secret_key if isinstance(app.secret_key, bytes) else str(app.secret_key).encode()
         expected = hmac.new(secret_bytes, msg, hashlib.sha256).hexdigest()
@@ -474,36 +435,26 @@ def verify_token(token: str) -> Optional[str]:
     except Exception:
         return None
 
-# Настройки cookies
-is_production = os.environ.get("RENDER") is not None  # Render устанавливает эту переменную
+is_production = os.environ.get("RENDER") is not None
 app.config.update(
     SESSION_COOKIE_SAMESITE="Lax" if not is_production else "None",
-    SESSION_COOKIE_SECURE=is_production,  # True только на HTTPS (Render)
+    SESSION_COOKIE_SECURE=is_production,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_NAME="habit_session",
     SESSION_COOKIE_PATH="/",
-    PERMANENT_SESSION_LIFETIME=86400 * 30  # 30 дней
+    PERMANENT_SESSION_LIFETIME=86400 * 30
 )
 
-# Разрешённый origin (фронтенд). Можно задать переменной окружения ALLOWED_ORIGIN
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "*")
 
-# CORS headers для frontend - разрешаем все Origin для мобильного приложения
 def _cors_origin():
     origin = request.headers.get('Origin')
-    # В режиме разработки разрешаем все Origin
     if config['api']['debug']:
         return origin if origin else '*'
-    # В production проверяем конкретные Origin
-    if origin:
-        # Разрешаем localhost, локальные IP и capacitor схемы
-        if (origin.startswith('http://localhost') or 
-            origin.startswith('http://127.0.0.1') or
-            origin.startswith('http://192.168.') or
-            origin.startswith('http://10.0.') or
-            origin.startswith('capacitor://') or
-            origin.startswith('ionic://')):
-            return origin
+    if origin and any(origin.startswith(p) for p in (
+        'http://localhost', 'http://127.0.0.1', 'http://192.168.', 'http://10.0.',
+        'capacitor://', 'ionic://')):
+        return origin
     return ALLOWED_ORIGIN
 
 @app.after_request
@@ -529,9 +480,6 @@ def handle_preflight():
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
 
-# Сессии Flask
-
-# Auth Services
 def register_user_service(data: Dict):
     try:
         username = (data.get("username") or "").strip()
@@ -548,8 +496,7 @@ def register_user_service(data: Dict):
         return {"user": user, "message": "Аккаунт создан успешно"}, 201
     except ValueError as e:
         return {"error": str(e)}, 400
-    except Exception as e:
-        print(f"Ошибка при регистрации: {e}")
+    except Exception:
         return {"error": "Внутренняя ошибка сервера"}, 500
 
 def login_user_service(data: Dict):
@@ -561,10 +508,9 @@ def login_user_service(data: Dict):
     
     user = authenticate_user(email, password)
     if user:
-        session.permanent = True  # Сессия сохраняется 30 дней
+        session.permanent = True
         session['user_id'] = user["id"]
-        print(f"✅ Пользователь {email} вошёл, session: {dict(session)}")
-        token = generate_token(user["id"])  # Добавляем выдачу токена
+        token = generate_token(user["id"])
         return {"user": user, "token": token, "message": "Вход выполнен успешно"}, 200
     else:
         return {"error": "Неверный email или пароль"}, 401
@@ -578,30 +524,29 @@ def get_current_user():
 def get_current_user_id():
     return session.get('user_id')
 
-def require_auth():
+def get_verified_user_id():
     user_id = session.get('user_id')
-    auth_header = request.headers.get('Authorization', '')
-    
-    # Сначала проверяем сессию
     if user_id:
-        print(f"🔐 require_auth: user_id из сессии={user_id}")
-        return None
-    
-    # Если сессии нет, пытаемся извлечь Bearer токен
+        return user_id
+    auth_header = request.headers.get('Authorization', '')
     if auth_header.startswith('Bearer '):
-        token = auth_header[7:].strip()
-        verified_user_id = verify_token(token)
-        if verified_user_id:
-            print(f"🔐 require_auth: user_id из токена={verified_user_id}")
-            # Устанавливаем в сессию для текущего запроса
-            session['user_id'] = verified_user_id
-            session.modified = True  # Обязательно отмечаем сессию как изменённую
+        verified = verify_token(auth_header[7:].strip())
+        if verified:
+            return verified
+    return None
+
+def require_auth():
+    if session.get('user_id'):
+        return None
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        uid = verify_token(auth_header[7:].strip())
+        if uid:
+            session['user_id'] = uid
+            session.modified = True
             return None
-    
-    print(f"🔐 require_auth: не авторизован. header={auth_header[:40]}")
     return {"error": "Требуется авторизация"}, 401
 
-# Статические файлы (для фронтенда)
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
@@ -614,12 +559,9 @@ def static_files(path):
 def api_register():
     try:
         data = request.get_json(force=True, silent=True) or {}
-        print(f"Получен запрос регистрации: {data}")
         body, code = register_user_service(data)
-        print(f"Ответ: {body}, код: {code}")
         return jsonify(body), code
-    except Exception as e:
-        print(f"Ошибка в api_register: {e}")
+    except Exception:
         return jsonify({"error": "Внутренняя ошибка сервера"}), 500
 
 @app.post("/api/login")
@@ -700,7 +642,6 @@ def api_stats(habit_id: str):
 
 @app.get("/api/habits/<habit_id>/calendar")
 def api_calendar(habit_id: str):
-    """Получить все записи привычки для календаря"""
     auth_error = require_auth()
     if auth_error:
         return jsonify(auth_error[0]), auth_error[1]
@@ -712,12 +653,9 @@ def api_calendar(habit_id: str):
     if not get_habit(habit_id, user_id):
         return jsonify({"error": "habit not found"}), 404
     
-    # Получаем все записи для этой привычки
     entries = list(entries_collection.find({
         "habit_id": habit_id
     }).sort("date", 1))
-    
-    # Конвертируем ObjectId и форматируем
     result = []
     for entry in entries:
         result.append({
@@ -734,65 +672,156 @@ def api_calendar(habit_id: str):
 
 @app.get("/api/user/progress")
 def api_user_progress():
-    """Получить прогресс пользователя (XP, уровень, бейджи)"""
     auth_error = require_auth()
     if auth_error:
         return jsonify(auth_error[0]), auth_error[1]
     
-    user_id = get_current_user_id()
+    user_id = get_verified_user_id()
     if not user_id:
         return jsonify({"error": "unauthorized"}), 401
     
-    # Получаем все привычки пользователя
+    try:
+        user_id_obj = ObjectId(user_id)
+        user = users_collection.find_one({"_id": user_id_obj})
+    except Exception:
+        return jsonify({"error": "invalid_user_id"}), 400
+    
+    if not user:
+        return jsonify({"error": "user_not_found"}), 404
+    
     user_habits = list(habits_collection.find({
         "user_id": user_id,
         "is_active": True
     }))
-    
     total_completed = 0
     longest_streak = 0
     category_stats = {}
-    
+    total_habits = len(user_habits)
+    earned_badges = []
     for habit in user_habits:
         habit_id = str(habit["_id"])
         streak_data = streaks(habit_id)
-        
         total_completed += streak_data.get("total_completed", 0)
-        if streak_data.get("max", 0) > longest_streak:
-            longest_streak = streak_data["max"]
-        
+        current_streak = streak_data.get("max", 0)
+        if current_streak > longest_streak:
+            longest_streak = current_streak
         category = habit.get("category", "other")
-        if category:
-            category_stats[category] = category_stats.get(category, 0) + streak_data.get("total_completed", 0)
+        if category and category != "other":
+            if category not in category_stats:
+                category_stats[category] = 0
+            category_stats[category] += streak_data.get("total_completed", 0)
+    xp = total_completed * 10
+    level = 1
+    level_ranges = [
+        (0, 99, 1), (100, 249, 2), (250, 499, 3), (500, 999, 4),
+        (1000, 1999, 5), (2000, 3999, 6), (4000, 7999, 7),
+        (8000, 15999, 8), (16000, 31999, 9), (32000, float('inf'), 10)
+    ]
+    
+    for min_xp, max_xp, lvl in level_ranges:
+        if min_xp <= xp <= max_xp:
+            level = lvl
+            break
+    if total_completed > 0:
+        earned_badges.append('firstStep')
+    for habit in user_habits:
+        streak_data = streaks(str(habit["_id"]))
+        if streak_data.get("max", 0) >= 7 and 'weekWarrior' not in earned_badges:
+            earned_badges.append('weekWarrior')
+            break
+    for habit in user_habits:
+        streak_data = streaks(str(habit["_id"]))
+        if streak_data.get("max", 0) >= 30 and 'monthMaster' not in earned_badges:
+            earned_badges.append('monthMaster')
+            break
+    for habit in user_habits:
+        streak_data = streaks(str(habit["_id"]))
+        if streak_data.get("max", 0) >= 100 and 'streakMaster' not in earned_badges:
+            earned_badges.append('streakMaster')
+            break
+    for habit in user_habits:
+        streak_data = streaks(str(habit["_id"]))
+        if streak_data.get("total_completed", 0) >= 100 and 'hundredHero' not in earned_badges:
+            earned_badges.append('hundredHero')
+            break
+    category_badge_map = {
+        'sport': {'id': 'sportsman', 'min': 50},
+        'study': {'id': 'scholar', 'min': 50},
+        'health': {'id': 'healthGuru', 'min': 50},
+        'work': {'id': 'workaholic', 'min': 50}
+    }
+    
+    for category, badge_info in category_badge_map.items():
+        if category_stats.get(category, 0) >= badge_info['min']:
+            if badge_info['id'] not in earned_badges:
+                earned_badges.append(badge_info['id'])
+    if len([c for c in category_stats.keys() if c != 'other']) >= 4:
+        if 'categoryCollector' not in earned_badges:
+            earned_badges.append('categoryCollector')
+    if total_habits >= 25:
+        if 'habitMaster' not in earned_badges:
+            earned_badges.append('habitMaster')
+    today = date.today()
+    start_of_week = today - timedelta(days=today.weekday())
+    end_of_week = start_of_week + timedelta(days=6)
+    
+    if total_habits > 0:
+        perfect_week = True
+        for habit in user_habits:
+            habit_id = str(habit["_id"])
+            week_entries = list(entries_collection.find({
+                "habit_id": habit_id,
+                "date": {"$gte": start_of_week.isoformat(), "$lte": today.isoformat()},
+                "status": True
+            }))
+            days_in_week = (today - start_of_week).days + 1
+            if len(week_entries) < days_in_week:
+                perfect_week = False
+                break
+        
+        if perfect_week and 'perfectWeek' not in earned_badges:
+            earned_badges.append('perfectWeek')
+    if total_completed >= 30 and 'consistency_king' not in earned_badges:
+        earned_badges.append('consistency_king')
+    users_collection.update_one(
+        {"_id": user_id_obj},
+        {"$set": {
+            "xp": xp,
+            "level": level,
+            "badges": earned_badges,
+            "totalHabitsCompleted": total_completed,
+            "longestStreak": longest_streak,
+            "categoryStats": category_stats
+        }}
+    )
     
     return jsonify({
-        "total_habits": len(user_habits),
+        "xp": xp,
+        "level": level,
+        "level_emoji": "⭐",
+        "level_name": f"Level {level}",
+        "badges": earned_badges,
+        "earned_badges": earned_badges,
         "total_completed": total_completed,
+        "totalHabitsCompleted": total_completed,
         "longest_streak": longest_streak,
-        "category_stats": category_stats
+        "total_habits": total_habits
     })
 
 @app.get("/api/user/stats")
 def api_user_stats():
-    """Получить общую статистику пользователя"""
     auth_error = require_auth()
     if auth_error:
         return jsonify(auth_error[0]), auth_error[1]
-    
     user_id = get_current_user_id()
     if not user_id:
         return jsonify({"error": "unauthorized"}), 401
-    
-    # Получаем все привычки пользователя
     user_habits = list(habits_collection.find({
         "user_id": user_id,
         "is_active": True
     }))
-    
     today = date.today()
     today_str = today.isoformat()
-    
-    # Считаем выполненные сегодня
     completed_today = 0
     for habit in user_habits:
         habit_id = str(habit["_id"])
@@ -803,8 +832,6 @@ def api_user_stats():
         })
         if entry:
             completed_today += 1
-    
-    # Общая статистика по всем привычкам
     total_habits = len(user_habits)
     all_streaks = []
     total_completed = 0
@@ -828,33 +855,21 @@ def api_user_stats():
 
 @app.get("/api/health")
 def health():
+    try:
+        client.admin.command('ping')
+        db_status = "connected"
+    except Exception:
+        db_status = "disconnected"
     return jsonify({
         "status": "ok",
         "service": "Habit Tracker API",
         "version": "2.0",
-        "database": "connected" if client else "disconnected"
+        "database": db_status
     })
 
 if __name__ == "__main__":
-    print("\n" + "="*70)
-    print("           🎯 HABIT TRACKER - API BACKEND")
-    print("="*70)
-    print(f"\n⚙️  Режим:          {'DEBUG' if config['api']['debug'] else 'PRODUCTION'}")
     port = int(os.environ.get("PORT", config["api"]["port"]))
-    print(f"🔌 API Server:     http://{config['api']['host']}:{port}")
-    print(f"📊 Health Check:   http://{config['api']['host']}:{port}/api/health")
-    print(f"🗄️  База данных:    MongoDB Atlas")
-    print(f"🔐 Сессии:         Flask Sessions (cookies)")
-    print("\n" + "="*70)
-    print("✅ Инициализация базы данных...")
-    print("="*70 + "\n")
-    
+    host = config["api"]["host"]
     init_db()
-    
-    print("🚀 Запуск Flask сервера...\n")
-    app.run(
-        debug=config["api"]["debug"],
-        port=port,
-        host=config["api"]["host"],
-        use_reloader=False  # Отключаем перезагрузчик для стабильности на Windows
-    )
+    print(f"API: http://{host}:{port}/api")
+    app.run(debug=config["api"]["debug"], port=port, host=host, use_reloader=False)

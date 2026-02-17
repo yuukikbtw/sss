@@ -20,13 +20,11 @@
             </div>
             
             <div class="header-actions">
-                <!-- Кнопки авторизации (для гостей) -->
                 <div id="authButtons">
                     <button class="btn btn-secondary" onclick="openAuthModal('login')" data-i18n="login">Увійти</button>
                     <button class="btn" onclick="openAuthModal('register')" data-i18n="register">Реєстрація</button>
                 </div>
                 
-                <!-- Кнопки приложения (для залогиненных) -->
                 <div id="appButtons" style="display: none;">
                     <button class="btn btn-secondary" onclick="openAwardsModal()">
                         <span data-i18n="awards">🏆 Нагороди</span>
@@ -39,7 +37,6 @@
                     </button>
                 </div>
                 
-                <!-- Информация о пользователе (справа, для залогиненных) -->
                 <div id="userInfo" style="display: none;">
                     <div class="user-avatar">
                         <span id="userAvatar">👤</span>
@@ -68,7 +65,6 @@
                     </div>
                     <div class="user-dropdown-arrow">▼</div>
                     
-                    <!-- Выпадающее меню профиля -->
                     <div class="user-profile-dropdown" id="userProfileDropdown">
                         <div class="profile-header">
                             <div class="profile-avatar-large">
@@ -133,7 +129,6 @@
             <aside class="panel">
                 <h2 data-i18n="statistics">📊 Статистика</h2>
                 
-                <!-- Шагомер -->
                 <div class="step-counter-container" id="stepCounterSection" style="display: none;">
                     <div class="step-counter-header">
                         <div class="step-counter-icon">👟</div>

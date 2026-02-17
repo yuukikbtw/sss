@@ -97,6 +97,10 @@ const translations = {
         minute: 'хвилин',
         hour: 'годин',
         day: 'днів',
+        notificationsEnabled: '✅ Сповіщення ввімкнено!',
+        notificationsBlocked: '❌ Сповіщення заблоковані у налаштуваннях браузера',
+        notificationsDenied: '❌ Доступ до сповіщень відхилено',
+        enableNotificationsForReminders: 'ℹ️ Для роботи напоминаний потрібно увімкнути сповіщення',
         
         
         anytime: 'Будь-коли',
@@ -455,6 +459,11 @@ const translations = {
         remaining: 'Залишилось:',
         goalCompleted: '🎉 Ціль досягнута!',
         defaultGoal: 'За замовчуванням: 10,000 кроків',
+        motionPermissionGranted: '✅ Доступ до датчика руху увімкнено!',
+        motionPermissionDenied: '❌ Доступ до датчика руху заборонено',
+        stepTrackerNeedsPermission: '📱 Трекер потребує доступу до датчика руху',
+        enableMotionSensor: '🔓 Увімкнути датчик',
+        activityPermissionNeeded: 'ℹ️ Потрібен дозвіл на доступ до фізичної активності для роботи кромимера',
         
         // Гейміфікація
         xpEarned: 'Отримано XP',
@@ -562,6 +571,10 @@ const translations = {
         minute: 'minutes',
         hour: 'hours',
         day: 'days',
+        notificationsEnabled: '✅ Notifications enabled!',
+        notificationsBlocked: '❌ Notifications blocked in browser settings',
+        notificationsDenied: '❌ Notifications permission denied',
+        enableNotificationsForReminders: 'ℹ️ Notifications must be enabled for reminders to work',
         
         
         anytime: 'Anytime',
@@ -919,6 +932,11 @@ const translations = {
         remaining: 'Remaining:',
         goalCompleted: '🎉 Goal achieved!',
         defaultGoal: 'Default: 10,000 steps',
+        motionPermissionGranted: '✅ Motion sensor enabled!',
+        motionPermissionDenied: '❌ Motion sensor permission denied',
+        stepTrackerNeedsPermission: '📱 Step tracker needs motion sensor access',
+        enableMotionSensor: '🔓 Enable Sensor',
+        activityPermissionNeeded: 'ℹ️ Activity Recognition permission needed for step counter',
         
         // Gamification
         xpEarned: 'XP Earned',
@@ -1015,27 +1033,6 @@ function updateAllTexts() {
         el.value = t(key);
     });
 }
-
-
-function showSuccess(messageKey) {
-    const message = t(messageKey) || messageKey;
-    
-    const notification = document.createElement('div');
-    notification.className = 'notification success';
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}
-
-function showError(messageKey) {
-    const message = t(messageKey) || messageKey;
-    const notification = document.createElement('div');
-    notification.className = 'notification error';
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}
-
 
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {

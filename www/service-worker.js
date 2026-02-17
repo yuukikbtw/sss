@@ -137,7 +137,7 @@ async function cacheFirstStrategy(request) {
     console.error('❌ [SW] Ошибка загрузки:', error);
     
     // Возвращаем офлайн страницу для HTML
-    if (request.headers.get('accept').includes('text/html')) {
+    if ((request.headers.get('accept') || '').includes('text/html')) {
       return new Response(
         `<!DOCTYPE html>
         <html lang="ru">

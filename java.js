@@ -1,26 +1,20 @@
-﻿
-// Автоматически определяем API_BASE на основе текущего хоста
-// Это решает проблему с cookies при заходе по IP
+
 function getAutoApiBase() {
     const currentHost = window.location.hostname;
     const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
     
-    // Production на Render (или любой https без порта) - API на том же домене
     if (window.location.protocol === 'https:' || currentHost.includes('render.com') || currentHost.includes('onrender.com')) {
         return `${window.location.protocol}//${currentHost}/api`;
     }
     
-    // Если заходим на порт 5001 (Flask напрямую) - используем тот же хост
     if (currentPort === '5001') {
         return `${window.location.protocol}//${currentHost}:5001/api`;
     }
     
-    // Если заходим на порт 8000 (static server) - API на том же хосте, порт 5001
     if (currentPort === '8000') {
         return `${window.location.protocol}//${currentHost}:5001/api`;
     }
     
-    // Fallback
     return 'http://localhost:5001/api';
 }
 
@@ -28,7 +22,6 @@ let API_BASE = getAutoApiBase();
 let isServerOnline = false;
 let serverCheckInterval = null;
 
-// Сохраняем для совместимости, но теперь не используем localStorage
 const POSSIBLE_API_URLS = [
     getAutoApiBase(),
     'http://localhost:5001/api',
@@ -44,34 +37,31 @@ function updateConnectionStatus(online) {
         statusEl.className = 'connection-status ' + (online ? 'online' : 'offline');
         const statusText = t(online ? 'online' : 'offline');
         statusEl.innerHTML = online 
-            ? `<span class="status-icon">🟢</span><span class="status-text">${statusText}</span>`
-            : `<span class="status-icon">🔴</span><span class="status-text">${statusText}</span>`;
+            ? `<span class="status-icon">●</span><span class="status-text">${statusText}</span>`
+            : `<span class="status-icon">●</span><span class="status-text">${statusText}</span>`;
     }
-    console.log(online ? '✅ ' + t('online') : '❌ ' + t('offline'));
+    console.log(online ? '[ONLINE] ' + t('online') : '[OFFLINE] ' + t('offline'));
 }
 
 
 async function apiFetch(url, options = {}) {
-    // Получаем токен
     let token = null;
     try {
         token = localStorage.getItem('authToken');
     } catch (e) {
-        console.warn('Не удалось прочитать токен:', e);
+        console.warn('[WARN] Не удалось прочитать токен:', e);
     }
     
-    // Формируем заголовки
     const headers = {
         'Content-Type': 'application/json',
         ...(options.headers || {})
     };
     
-    // Добавляем Bearer токен
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
-        console.log(`📤 ${options.method || 'GET'} ${url} [TOKEN: ${token.substring(0, 15)}...]`);
+        console.log(`[API] ${options.method || 'GET'} ${url} [TOKEN: ${token.substring(0, 15)}...]`);
     } else {
-        console.log(`📤 ${options.method || 'GET'} ${url} [NO TOKEN]`);
+        console.log(`[API] ${options.method || 'GET'} ${url} [NO TOKEN]`);
     }
     
     const fetchOptions = {
@@ -80,17 +70,14 @@ async function apiFetch(url, options = {}) {
         headers: headers
     };
     
-    // Убираем headers из options чтобы не дублировались
     delete fetchOptions.headers;
     fetchOptions.headers = headers;
     
     const response = await fetch(url, fetchOptions);
-    console.log(`📥 ${response.status} ${url}`);
+    console.log(`[RESPONSE] ${response.status} ${url}`);
     
-    // Если 401 - токен протух, пробуем перелогиниться
     if (response.status === 401 && !url.includes('/login') && !url.includes('/register')) {
-        console.warn('⚠️ Токен недействителен, требуется повторный вход');
-        // Можно показать модалку логина
+        console.warn('[AUTH] Токен недействителен, требуется повторный вход');
     }
     
     return response;
@@ -100,6 +87,7 @@ let habits = [];
 let categories = [];
 let selectedHabitId = null;
 let currentUser = null;
+const habitCompletedDatesMap = new Map();
 
 
 function getDefaultCategories() {
@@ -175,11 +163,8 @@ let userProgress = {
     earlyBirdCount: 0,
     nightOwlCount: 0,
     createdHabits: 0,
-    // Зберігаємо дні за які вже отримано XP: { "habitId_date": true }
     xpClaimedDays: {}
 };
-
-
 
 
 function initUserProgress() {
@@ -469,18 +454,21 @@ const errorMessage = document.getElementById('errorMessage');
 
 
 function showError(msg) {
+    if (!errorMessage) return;
     errorMessage.innerHTML = `<div class="error">${msg}</div>`;
-    setTimeout(() => errorMessage.innerHTML = '', 5000);
+    setTimeout(() => { if (errorMessage) errorMessage.innerHTML = ''; }, 5000);
 }
 
 function showSuccess(msg) {
+    if (!errorMessage) return;
     errorMessage.innerHTML = `<div class="success">${msg}</div>`;
-    setTimeout(() => errorMessage.innerHTML = '', 3000);
+    setTimeout(() => { if (errorMessage) errorMessage.innerHTML = ''; }, 3000);
 }
 
 function showInfo(msg) {
+    if (!errorMessage) return;
     errorMessage.innerHTML = `<div class="info">${msg}</div>`;
-    setTimeout(() => errorMessage.innerHTML = '', 4000);
+    setTimeout(() => { if (errorMessage) errorMessage.innerHTML = ''; }, 4000);
 }
 
 function formatDate(date) {
@@ -737,6 +725,18 @@ function selectReminderType(type, element) {
     
     specificSettings.style.display = type === 'specific' ? 'block' : 'none';
     intervalSettings.style.display = type === 'interval' ? 'block' : 'none';
+    
+    if (type !== 'none') {
+        setTimeout(async () => {
+            const hasPermission = await requestNotificationPermission();
+            if (!hasPermission) {
+                showInfo(
+                    t('enableNotificationsForReminders') || 
+                    'ℹ️ Notifications need to be enabled for reminders to work'
+                );
+            }
+        }, 100);
+    }
     
     
     const dropdown = document.getElementById('reminderDropdown');
@@ -1077,6 +1077,18 @@ function selectEditReminderType(type, element) {
     specificSettings.style.display = type === 'specific' ? 'block' : 'none';
     intervalSettings.style.display = type === 'interval' ? 'block' : 'none';
     
+    if (type !== 'none') {
+        setTimeout(async () => {
+            const hasPermission = await requestNotificationPermission();
+            if (!hasPermission) {
+                showInfo(
+                    t('enableNotificationsForReminders') || 
+                    'ℹ️ Notifications need to be enabled for reminders to work'
+                );
+            }
+        }, 100);
+    }
+    
     const dropdown = document.getElementById('editReminderDropdown');
     const selector = dropdown.closest('.reminder-selector');
     dropdown.classList.remove('active');
@@ -1315,7 +1327,6 @@ async function login(email, password) {
         if (response.ok) {
             currentUser = data.user;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            // Сохраняем выданный токен (если пришёл)
             if (data.token) {
                 localStorage.setItem('authToken', data.token);
                 console.log('✅ Токен сохранён в localStorage:', data.token.substring(0, 20) + '...');
@@ -1378,28 +1389,23 @@ async function logout() {
         console.error('Logout API error:', error);
     }
     
-    // Очищаем всё локально в любом случае
     currentUser = null;
     habits = [];
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
     
-    // Удаляем rememberedUser если не включен "запомнить меня"
     const rememberMe = document.getElementById('rememberMe')?.checked;
     if (!rememberMe) {
         localStorage.removeItem('rememberedUser');
     }
     
-    // Обновляем UI
     updateUIForLoggedOutUser();
     showSuccess(t('logoutSuccess'));
 }
 
 async function checkAuth() {
-    
     try {
         const response = await apiFetch(`${API_BASE}/me`);
-        
         updateConnectionStatus(true);
         
         if (response.ok) {
@@ -1408,13 +1414,12 @@ async function checkAuth() {
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             updateUIForLoggedInUser();
             fetchHabits();
+            loadUserProgress();
             return;
         }
     } catch (error) {
-        
         updateConnectionStatus(false);
     }
-    
     
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
@@ -1422,15 +1427,81 @@ async function checkAuth() {
             currentUser = JSON.parse(storedUser);
             updateUIForLoggedInUser();
             fetchHabits();
+            loadUserProgress();
             return;
         } catch (error) {
             localStorage.removeItem('currentUser');
         }
     }
     
-    
     updateUIForLoggedOutUser();
 }
+
+async function loadUserProgress() {
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.warn('No auth token found');
+            return;
+        }
+        
+        const response = await apiFetch(`${API_BASE}/user/progress`);
+        
+        if (!response.ok) {
+            console.error('Progress API returned:', response.status);
+            return;
+        }
+        
+        const data = await response.json();
+        console.log('✅ Progress loaded:', data);
+        
+        userProgress.xp = data.xp || 0;
+        userProgress.level = data.level || 1;
+        userProgress.totalHabitsCompleted = data.total_completed || 0;
+        userProgress.longestStreak = data.longest_streak || 0;
+        userProgress.earnedBadges = data.earned_badges || [];
+        
+        if (document.getElementById('userLevel')) {
+            document.getElementById('userLevel').innerHTML = `
+                <span class="level-emoji">${data.level_emoji || '⭐'}</span>
+                <span class="level-name">${data.level_name || 'Level'}</span>
+                <span class="level-number">Lvl ${data.level}</span>
+            `;
+        }
+        
+        if (document.getElementById('userHabitsCount')) {
+            document.getElementById('userHabitsCount').textContent = data.total_completed || 0;
+        }
+        
+        displayBadges(data.earned_badges || []);
+        
+        updateLevelDisplay();
+        
+    } catch (error) {
+        console.error('Error loading progress:', error);
+    }
+}
+
+function displayBadges(badges) {
+    const badgesContainer = document.getElementById('earnedBadges');
+    if (!badgesContainer) return;
+    
+    if (!badges || badges.length === 0) {
+        badgesContainer.innerHTML = '<p style="color: var(--text-muted);">Поки немає нагород</p>';
+        return;
+    }
+    
+    badgesContainer.innerHTML = badges.map(badgeId => {
+        const badge = window.badges && window.badges[badgeId];
+        if (!badge) return '';
+        return `
+            <div class="badge earned" title="${badge.name}: ${badge.description}">
+                <span style="font-size: 24px;">${badge.emoji}</span>
+            </div>
+        `;
+    }).join('');
+}
+
 
 function updateUIForLoggedInUser() {
     document.getElementById('authButtons').style.display = 'none';
@@ -1438,19 +1509,16 @@ function updateUIForLoggedInUser() {
     document.getElementById('appButtons').style.display = 'flex';
     document.getElementById('userName').textContent = currentUser.username;
     
-    // Показываем шагомер для залогиненных пользователей
     const stepCounterSection = document.getElementById('stepCounterSection');
     if (stepCounterSection) {
         stepCounterSection.style.display = 'block';
     }
     
-    // Показываем статистику в aside
     const statsSection = document.querySelector('aside.panel');
     if (statsSection) {
         statsSection.style.display = 'block';
     }
     
-    // Убираем guest-mode с main
     const mainElement = document.querySelector('main');
     if (mainElement) {
         mainElement.classList.remove('guest-mode');
@@ -1460,44 +1528,36 @@ function updateUIForLoggedInUser() {
 }
 
 function updateUIForLoggedOutUser() {
-    // Показываем кнопки авторизации
     document.getElementById('authButtons').style.display = 'flex';
     
-    // Скрываем элементы для авторизованных
     document.getElementById('userInfo').style.display = 'none';
     document.getElementById('appButtons').style.display = 'none';
     
-    // Скрываем шагомер
     const stepCounterSection = document.getElementById('stepCounterSection');
     if (stepCounterSection) {
         stepCounterSection.style.display = 'none';
     }
     
-    // Скрываем статистику в aside (там профиль, категории и т.д.)
     const statsSection = document.querySelector('aside.panel');
     if (statsSection) {
         statsSection.style.display = 'none';
     }
     
-    // Добавляем guest-mode на main чтобы убрать пустое место
     const mainElement = document.querySelector('main');
     if (mainElement) {
         mainElement.classList.add('guest-mode');
     }
     
-    // Сбрасываем отображение профиля
     const userLevel = document.getElementById('userLevel');
     if (userLevel) {
         userLevel.innerHTML = '';
     }
     
-    // Очищаем данные пользователя
     currentUser = null;
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
     habits = [];
     
-    // Показываем сообщение "Войдите или зарегистрируйтесь"
     renderHabitsForGuest();
 }
 
@@ -1866,11 +1926,10 @@ async function updateWeekCells() {
             const stats = await response.json();
             
             if (stats.entries) {
-                // Статус может быть true/false или 1/0
                 const completedDates = new Set(
                     stats.entries.filter(e => e.status === true || e.status === 1).map(e => e.date)
                 );
-                
+                habitCompletedDatesMap.set(habit.id, completedDates);
                 const notCompletedDates = new Set(
                     stats.entries.filter(e => e.status === false || e.status === 0).map(e => e.date)
                 );
@@ -1886,7 +1945,6 @@ async function updateWeekCells() {
                     
                     const cell = document.querySelector(`[data-habit-id="${habit.id}"][data-date="${dateStr}"]`);
                     if (cell) {
-                        // Майбутні дати ніколи не можуть бути done
                         if (isFuture) {
                             cell.classList.remove('done');
                             cell.classList.add('future', 'disabled');
@@ -1908,7 +1966,6 @@ async function updateWeekCells() {
 async function toggleDay(habitId, date) {
     console.log(`Переключение состояния привычки ${habitId} на дату ${date}`);
     
-    // Перевіряємо чи дата не в майбутньому і не в минулому (тільки сьогодні!)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(date);
@@ -1919,7 +1976,6 @@ async function toggleDay(habitId, date) {
         return;
     }
     
-    // Заборона відмічати минулі дні (тільки сьогодні можна!)
     if (selectedDate < today) {
         showError(t('cannotMarkPast') || 'Не можна відмічати минулі дати');
         return;
@@ -1948,14 +2004,12 @@ async function toggleDay(habitId, date) {
         
         console.log(`Текущий статус: ${isDone ? 'выполнено' : 'не выполнено'}, новый статус: ${newStatus}`);
         
-        // ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ - сразу меняем UI без ожидания сервера
         if (newStatus === 1) {
             cell.classList.add('done');
         } else {
             cell.classList.remove('done');
         }
         
-        // Отправляем на сервер
         const response = await apiFetch(`${API_BASE}/habits/${habitId}/tick`, {
             method: 'POST',
             body: JSON.stringify({
@@ -1967,20 +2021,22 @@ async function toggleDay(habitId, date) {
         console.log('Ответ сервера:', response.status, response.ok);
         
         if (response.ok) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            let completedSet = habitCompletedDatesMap.get(habitId);
+            if (!completedSet) {
+                completedSet = new Set();
+                habitCompletedDatesMap.set(habitId, completedSet);
+            }
             if (newStatus === 1) {
+                completedSet.add(date);
                 showSuccess(t('habitMarked'));
-                
-                // XP та прогрес нараховуємо ТІЛЬКИ за сьогодні і ТІЛЬКИ ОДИН РАЗ
-                const todayStr = new Date().toISOString().split('T')[0];
                 const isToday = (date === todayStr);
                 
-                // Ключ для перевірки чи вже отримано XP за цей день
                 const xpKey = `${habitId}_${date}`;
                 const alreadyClaimedXP = userProgress.xpClaimedDays && userProgress.xpClaimedDays[xpKey];
                 
                 const habit = habits.find(h => String(h.id) === String(habitId));
                 if (habit && isToday && !alreadyClaimedXP) {
-                    // Позначаємо що XP за цей день вже отримано
                     if (!userProgress.xpClaimedDays) {
                         userProgress.xpClaimedDays = {};
                     }
@@ -2010,10 +2066,8 @@ async function toggleDay(habitId, date) {
                     console.log('XP за цей день вже отримано, пропускаємо');
                 }
             } else {
+                completedSet.delete(date);
                 showInfo(t('markRemoved'));
-                
-                // При відміні зменшуємо лічильник тільки якщо це сьогодні
-                const todayStr = new Date().toISOString().split('T')[0];
                 const isToday = (date === todayStr);
                 
                 const habit = habits.find(h => String(h.id) === String(habitId));
@@ -2024,20 +2078,16 @@ async function toggleDay(habitId, date) {
                     if (habit.category && userProgress.categoryStats[habit.category] > 0) {
                         userProgress.categoryStats[habit.category]--;
                     }
-                    // Сбрасываем текущий стрик при отмене
                     userProgress.currentStreaks[habitId] = 0;
                 }
             }
             
-            // Обновляем статистику если эта привычка выбрана
             if (String(selectedHabitId) === String(habitId)) {
                 loadStats(habitId);
             }
             
-            // Оновлюємо статистику в шапці профілю
             updateUserStats();
         } else {
-            // Откатываем UI если сервер вернул ошибку
             console.error('Сервер вернул ошибку:', response.status);
             if (newStatus === 1) {
                 cell.classList.remove('done');
@@ -2048,7 +2098,6 @@ async function toggleDay(habitId, date) {
         }
     } catch (error) {
         console.error('Ошибка в toggleDay:', error);
-        // Откатываем UI при ошибке
         if (cell) {
             if (newStatus === 1) {
                 cell.classList.remove('done');
@@ -2061,10 +2110,8 @@ async function toggleDay(habitId, date) {
 }
 
 function renderStats(weekStats, monthStats, habitData) {
-    // Streak может быть в habitData, weekStats или monthStats
     const rawStreak = habitData?.streak || weekStats?.streak || monthStats?.streak || {};
     
-    // Нормалізуємо streak з дефолтними значеннями
     const streak = {
         current: rawStreak.current || 0,
         max: rawStreak.max || 0,
@@ -2089,7 +2136,6 @@ function renderStats(weekStats, monthStats, habitData) {
         adherence_percent: monthStats?.adherence_percent || 0
     };
     
-    // Загальний відсоток виконання (Completion Rate)
     const overallCR = safeMonthStats.total_days > 0 
         ? Math.round((safeMonthStats.completed_days / safeMonthStats.total_days) * 100) 
         : 0;
@@ -2198,13 +2244,11 @@ function renderStats(weekStats, monthStats, habitData) {
         </div>
     `;
     
-    // Загружаем данные для календаря
     if (selectedHabitId) {
         loadCalendarData(selectedHabitId);
     }
 }
 
-// ========== КАЛЕНДАРЬ ==========
 let calendarCurrentMonth = new Date().getMonth();
 let calendarCurrentYear = new Date().getFullYear();
 let calendarData = {};
@@ -2222,7 +2266,7 @@ async function loadCalendarData(habitId) {
         }
     } catch (error) {
         console.error('Ошибка загрузки календаря:', error);
-        renderCalendar(); // Рендерим пустой календарь
+        renderCalendar();
     }
 }
 
@@ -2245,7 +2289,6 @@ function renderCalendar() {
     const lastDay = new Date(calendarCurrentYear, calendarCurrentMonth + 1, 0);
     const daysInMonth = lastDay.getDate();
     
-    // День недели первого дня (0 = воскресенье, преобразуем в понедельник = 0)
     let startingDay = firstDay.getDay() - 1;
     if (startingDay < 0) startingDay = 6;
     
@@ -2261,12 +2304,10 @@ function renderCalendar() {
         <div class="calendar-days">
     `;
     
-    // Пустые ячейки перед первым днём
     for (let i = 0; i < startingDay; i++) {
         calendarHTML += '<div class="calendar-day empty"></div>';
     }
     
-    // Дни месяца
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = formatDate(today);
@@ -2286,7 +2327,6 @@ function renderCalendar() {
         if (isFuture) classes += ' future';
         if (isPast) classes += ' past';
         
-        // Тільки сьогодні можна клікати для зміни статусу
         const isClickable = isToday;
         
         calendarHTML += `
@@ -2319,7 +2359,6 @@ function changeMonth(delta) {
 async function toggleCalendarDay(dateStr) {
     if (!selectedHabitId) return;
     
-    // Перевірка: тільки сьогодні можна змінювати
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(dateStr);
@@ -2351,9 +2390,8 @@ async function toggleCalendarDay(dateStr) {
             calendarData[dateStr] = newStatus;
             renderCalendar();
             
-            // Обновляем статистику
             loadStats(selectedHabitId);
-            fetchHabits(); // Обновляем недельную сетку
+            fetchHabits();
             
             if (newStatus) {
                 showSuccess('✅ ' + t('habitMarked'));
@@ -2461,7 +2499,6 @@ function editHabit(habitId) {
     openModal('editHabitModal');
 }
 
-// ========== ШАГОМЕР ==========
 let stepCounter = {
     steps: 0,
     goal: 10000,
@@ -2470,142 +2507,244 @@ let stepCounter = {
     lastReset: new Date().toDateString()
 };
 
-// Capacitor StepCounter Plugin (нативный Android)
-const StepCounter = window.Capacitor?.Plugins?.StepCounter || null;
+const STEP_MIN_MS = 300;
+const STEP_MAX_PER_MINUTE = 120;
+const STEP_DEBOUNCE_SAVE_MS = 3000;
+const STEP_DEBOUNCE_UI_MS = 400;
 
-function initStepCounter() {
-    // Загружаем сохранённые данные
-    const stored = localStorage.getItem('stepCounter');
-    if (stored) {
-        stepCounter = { ...stepCounter, ...JSON.parse(stored) };
-    }
-    
-    // Проверяем, нужно ли сбросить счётчик (новый день)
-    const today = new Date().toDateString();
+const StepCounter = window.Capacitor?.Plugins?.StepCounter || null;
+let stepSaveTimer = null;
+let stepUITimer = null;
+let stepCountThisMinute = 0;
+let stepMinuteStart = Date.now();
+
+function getStepTodayKey() {
+    return new Date().toDateString();
+}
+
+function scheduleStepSave() {
+    if (stepSaveTimer) return;
+    stepSaveTimer = setTimeout(() => {
+        stepSaveTimer = null;
+        localStorage.setItem('stepCounter', JSON.stringify(stepCounter));
+    }, STEP_DEBOUNCE_SAVE_MS);
+}
+
+function scheduleStepUI() {
+    if (stepUITimer) return;
+    stepUITimer = setTimeout(() => {
+        stepUITimer = null;
+        updateStepCounterUI();
+    }, STEP_DEBOUNCE_UI_MS);
+}
+
+function addStep() {
+    const today = getStepTodayKey();
     if (stepCounter.lastReset !== today) {
         stepCounter.steps = 0;
         stepCounter.lastReset = today;
-        saveStepCounter();
     }
-    
-    // Приоритет: нативный Android плагин > Web Accelerometer > DeviceMotion
+    const now = Date.now();
+    if (now - stepMinuteStart >= 60000) {
+        stepMinuteStart = now;
+        stepCountThisMinute = 0;
+    }
+    if (stepCountThisMinute >= STEP_MAX_PER_MINUTE) return;
+    stepCountThisMinute++;
+    stepCounter.steps++;
+    scheduleStepSave();
+    scheduleStepUI();
+}
+
+async function requestMotionPermission() {
+    try {
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            const permission = await DeviceMotionEvent.requestPermission();
+            if (permission === 'granted') {
+                stepCounter.isSupported = true;
+                startDeviceMotionStepCounter();
+                updateStepCounterUI();
+                showSuccess(t('motionPermissionGranted') || '✅ Доступ до датчика руху увімкнено!');
+                return true;
+            } else {
+                showError(t('motionPermissionDenied') || '❌ Доступ до датчика руху заборонено');
+                return false;
+            }
+        }
+        return false;
+    } catch (e) {
+        console.error('❌ Помилка запиту дозволу:', e);
+        return false;
+    }
+}
+
+async function requestActivityPermission() {
+    try {
+        // Capacitor permission request для Activity Recognition на Android
+        if (window.Capacitor?.Plugins?.Permissions) {
+            const result = await window.Capacitor.Plugins.Permissions.requestPermissions({
+                permissions: ['activity']
+            });
+            return result.results[0]?.state === 'granted';
+        }
+        return false;
+    } catch (e) {
+        console.error('❌ Activity permission error:', e);
+        return false;
+    }
+}
+
+async function initStepCounter() {
+    try {
+        const stored = localStorage.getItem('stepCounter');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            stepCounter = { ...stepCounter, ...parsed };
+        }
+    } catch (e) {}
+    const today = getStepTodayKey();
+    if (stepCounter.lastReset !== today) {
+        stepCounter.steps = 0;
+        stepCounter.lastReset = today;
+        localStorage.setItem('stepCounter', JSON.stringify(stepCounter));
+    }
     if (StepCounter && window.Capacitor?.isNativePlatform()) {
-        // Нативный Android шагомер
-        initNativeStepCounter();
-    } else if ('Accelerometer' in window) {
+        const activityPerm = await requestActivityPermission();
+        if (activityPerm) {
+            initNativeStepCounter();
+        } else {
+            showInfo(t('activityPermissionNeeded') || 'ℹ️ Activity Recognition permission needed for step counter');
+            addStepCounterPermissionButton();
+        }
+    } else if (typeof Accelerometer !== 'undefined') {
         stepCounter.isSupported = true;
         startAccelerometerStepCounter();
-    } else if ('DeviceMotionEvent' in window) {
-        stepCounter.isSupported = true;
-        startDeviceMotionStepCounter();
+    } else if (typeof DeviceMotionEvent !== 'undefined') {
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+            const hasPermission = await requestMotionPermission();
+            if (!hasPermission) {
+                addStepCounterPermissionButton();
+            }
+        } else {
+            stepCounter.isSupported = true;
+            startDeviceMotionStepCounter();
+        }
     } else {
         stepCounter.isSupported = false;
-        console.log('Step counter not supported on this device');
     }
-    
     updateStepCounterUI();
+}
+
+function addStepCounterPermissionButton() {
+    const stepCounterSection = document.getElementById('stepCounterSection');
+    if (!stepCounterSection) return;
+    
+    const existingBtn = stepCounterSection.querySelector('.motion-permission-btn');
+    if (existingBtn) return;
+    
+    const btn = document.createElement('div');
+    btn.className = 'motion-permission-btn';
+    btn.style.cssText = `
+        text-align: center;
+        padding: 16px;
+        background: rgba(0, 212, 255, 0.1);
+        border: 2px solid var(--accent);
+        border-radius: 12px;
+        margin-bottom: 16px;
+    `;
+    btn.innerHTML = `
+        <p style="margin: 0 0 12px 0; font-size: 0.95rem; color: var(--text-muted);">
+            📱 ${t('stepTrackerNeedsPermission') || 'Трекер потребує доступу до датчика руху'}
+        </p>
+        <button class="btn btn-primary" onclick="requestMotionPermission()" style="width: 100%;">
+            🔓 ${t('enableMotionSensor') || 'Увімкнути датчик'}
+        </button>
+    `;
+    
+    const container = stepCounterSection.querySelector('.step-counter-container');
+    if (container) {
+        container.insertBefore(btn, container.firstChild);
+    } else {
+        stepCounterSection.insertBefore(btn, stepCounterSection.firstChild);
+    }
 }
 
 async function initNativeStepCounter() {
     try {
-        // Проверяем доступность сенсора
         const { available } = await StepCounter.isAvailable();
         if (!available) {
-            console.log('Native accelerometer not available, falling back to web');
-            if ('DeviceMotionEvent' in window) {
-                startDeviceMotionStepCounter();
-            }
+            if (typeof DeviceMotionEvent !== 'undefined') startDeviceMotionStepCounter();
             return;
         }
-        
         stepCounter.isSupported = true;
         stepCounter.isNative = true;
-        
-        // Запускаем нативный шагомер
         await StepCounter.start();
-        console.log('✅ Native step counter started');
-        
-        // Получаем текущие шаги
         const data = await StepCounter.getSteps();
-        if (data.steps > 0) {
+        if (data && data.steps > 0) {
             stepCounter.steps = data.steps;
             updateStepCounterUI();
         }
-        
-        // Слушаем обновления шагов
         StepCounter.addListener('stepUpdate', (data) => {
-            stepCounter.steps = data.steps;
-            saveStepCounter();
+            stepCounter.steps = data.steps || stepCounter.steps;
+            scheduleStepSave();
             updateStepCounterUI();
         });
-        
-    } catch (error) {
-        console.log('Native step counter error:', error);
-        // Fallback на DeviceMotion
-        if ('DeviceMotionEvent' in window) {
-            startDeviceMotionStepCounter();
-        }
+    } catch (e) {
+        if (typeof DeviceMotionEvent !== 'undefined') startDeviceMotionStepCounter();
     }
 }
 
 function startAccelerometerStepCounter() {
     try {
-        const accelerometer = new Accelerometer({ frequency: 30 });
-        let lastMagnitude = 0;
-        let stepThreshold = 12; // Порог для определения шага
-        let lastStepTime = 0;
-        
-        accelerometer.addEventListener('reading', () => {
-            const magnitude = Math.sqrt(
-                accelerometer.x ** 2 + 
-                accelerometer.y ** 2 + 
-                accelerometer.z ** 2
-            );
-            
+        const acc = new Accelerometer({ frequency: 25 });
+        const buf = [];
+        const bufLen = 5;
+        let lastStepAt = 0;
+        const threshold = 11;
+        acc.addEventListener('reading', () => {
+            const m = Math.sqrt(acc.x ** 2 + acc.y ** 2 + acc.z ** 2);
+            buf.push(m);
+            if (buf.length > bufLen) buf.shift();
+            if (buf.length < 3) return;
             const now = Date.now();
-            
-            // Определяем шаг по резкому изменению ускорения
-            if (magnitude > stepThreshold && lastMagnitude <= stepThreshold && now - lastStepTime > 300) {
-                stepCounter.steps++;
-                lastStepTime = now;
-                saveStepCounter();
-                updateStepCounterUI();
+            if (now - lastStepAt < STEP_MIN_MS) return;
+            const mid = buf.length - 2;
+            if (buf[mid] >= threshold && buf[mid] >= buf[mid - 1] && buf[mid] >= buf[mid + 1]) {
+                lastStepAt = now;
+                addStep();
             }
-            
-            lastMagnitude = magnitude;
         });
-        
-        accelerometer.start();
-    } catch (error) {
-        console.log('Accelerometer error:', error);
+        acc.start();
+    } catch (e) {
         startDeviceMotionStepCounter();
     }
 }
 
 function startDeviceMotionStepCounter() {
-    let lastMagnitude = 0;
-    let lastStepTime = 0;
-    const stepThreshold = 15;
-    
-    window.addEventListener('devicemotion', (event) => {
-        const acc = event.accelerationIncludingGravity;
-        if (!acc) return;
-        
-        const magnitude = Math.sqrt(acc.x ** 2 + acc.y ** 2 + acc.z ** 2);
+    const buf = [];
+    const bufLen = 5;
+    let lastStepAt = 0;
+    const threshold = 12;
+    function onMotion(e) {
+        const a = e.accelerationIncludingGravity;
+        if (!a) return;
+        const m = Math.sqrt(a.x ** 2 + a.y ** 2 + a.z ** 2);
+        buf.push(m);
+        if (buf.length > bufLen) buf.shift();
+        if (buf.length < 3) return;
         const now = Date.now();
-        
-        if (magnitude > stepThreshold && lastMagnitude <= stepThreshold && now - lastStepTime > 300) {
-            stepCounter.steps++;
-            lastStepTime = now;
-            saveStepCounter();
-            updateStepCounterUI();
+        if (now - lastStepAt < STEP_MIN_MS) return;
+        const mid = buf.length - 2;
+        if (buf[mid] >= threshold && buf[mid] >= buf[mid - 1] && buf[mid] >= buf[mid + 1]) {
+            lastStepAt = now;
+            addStep();
         }
-        
-        lastMagnitude = magnitude;
-    }, true);
+    }
+    window.addEventListener('devicemotion', onMotion, { passive: true });
 }
 
 function saveStepCounter() {
+    stepCounter.lastReset = getStepTodayKey();
     localStorage.setItem('stepCounter', JSON.stringify(stepCounter));
 }
 
@@ -2661,7 +2800,6 @@ function setStepGoal(goal) {
 }
 
 function openSetGoalModal() {
-    // Створюємо модальне вікно для введення цілі
     const existingModal = document.getElementById('stepGoalModal');
     if (existingModal) {
         existingModal.remove();
@@ -2695,7 +2833,6 @@ function openSetGoalModal() {
     
     document.body.appendChild(modal);
     
-    // Фокус на інпут
     setTimeout(() => {
         const input = document.getElementById('stepGoalInput');
         if (input) {
@@ -2704,14 +2841,12 @@ function openSetGoalModal() {
         }
     }, 100);
     
-    // Закриття по кліку на оверлей
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             closeSetGoalModal();
         }
     });
     
-    // Закриття по Enter
     const input = document.getElementById('stepGoalInput');
     if (input) {
         input.addEventListener('keypress', (e) => {
@@ -2738,7 +2873,6 @@ function confirmSetGoal() {
     }
 }
 
-// ========== УЛУЧШЕННАЯ СТАТИСТИКА ПОЛЬЗОВАТЕЛЯ ==========
 async function updateUserStats() {
     if (!currentUser) return;
     
@@ -2747,17 +2881,14 @@ async function updateUserStats() {
         if (response.ok) {
             const stats = await response.json();
             
-            // Обновляем UI
             const totalHabitsEl = document.getElementById('totalHabits');
             const completedTodayEl = document.getElementById('completedToday');
             const longestStreakEl = document.getElementById('longestStreak');
-            const userHabitsCountEl = document.getElementById('userHabitsCount');
             const userStreakEl = document.getElementById('userStreak');
             
             if (totalHabitsEl) totalHabitsEl.textContent = stats.total_habits || 0;
             if (completedTodayEl) completedTodayEl.textContent = stats.completed_today || 0;
             if (longestStreakEl) longestStreakEl.textContent = stats.longest_streak || 0;
-            if (userHabitsCountEl) userHabitsCountEl.textContent = stats.total_habits || 0;
             if (userStreakEl) userStreakEl.textContent = stats.current_streak || 0;
         }
     } catch (error) {
@@ -2770,9 +2901,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initCategories();
     initUserProgress(); 
     checkAuth(); 
-    initStepCounter(); // Инициализация шагомера
+    initStepCounter();
     
-    // Показываем шагомер если поддерживается
     const stepSection = document.getElementById('stepCounterSection');
     if (stepSection && stepCounter.isSupported) {
         stepSection.style.display = 'block';
@@ -3087,13 +3217,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 const cell = e.target.closest('.day-cell');
                 
-                // Ігноруємо кліки на майбутні дати
                 if (cell.classList.contains('future') || cell.classList.contains('disabled')) {
                     showError(t('cannotMarkFuture') || 'Не можна відмічати майбутні дати');
                     return;
                 }
                 
-                // Ігноруємо кліки на минулі дати (тільки сьогодні!)
                 if (cell.classList.contains('past')) {
                     showError(t('cannotMarkPast') || 'Не можна відмічати минулі дати');
                     return;
@@ -3140,113 +3268,133 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+const REMINDER_MAX_PER_DAY = 3;
+const REMINDER_MIN_INTERVAL_MS = 15 * 60 * 1000;
+
+function checkNotificationSupport() {
+    return 'Notification' in window && navigator.serviceWorker !== undefined;
+}
+
+function getNotificationPermissionStatus() {
+    if (!('Notification' in window)) return 'unsupported';
+    return Notification.permission;
+}
+
 async function requestNotificationPermission() {
-    if ('Notification' in window) {
-        if (Notification.permission === 'default') {
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-                showSuccess(t('notificationsEnabled'));
-            } else {
-                showInfo(t('notificationsDisabled'));
-            }
+    try {
+        if (!('Notification' in window)) {
+            console.warn('❌ Notifications not supported on this device');
+            return false;
         }
+        
+        if (Notification.permission === 'granted') {
+            return true;
+        }
+        
+        if (Notification.permission === 'denied') {
+            showError(
+                t('notificationsBlocked') || 
+                '❌ Notifications blocked. Enable in browser settings.'
+            );
+            return false;
+        }
+        
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            showSuccess(t('notificationsEnabled') || '✅ Notifications enabled!');
+            return true;
+        } else if (permission === 'denied') {
+            showError(
+                t('notificationsDenied') || 
+                '❌ Notifications permission denied'
+            );
+            return false;
+        }
+        return false;
+    } catch (e) {
+        console.error('Error requesting notification permission:', e);
+        return false;
     }
 }
 
 function createNotification(title, body, icon = '🎯') {
-    if ('Notification' in window && Notification.permission === 'granted') {
-        const notification = new Notification(title, {
-            body: body,
-            icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMzIgNjRDNDkuNjczIDY0IDY0IDQ5LjY3MyA2NCAzMlM0OS42NzMgMCAzMiAwIDAgMTQuMzI3IDAgMzJzMTQuMzI3IDMyIDMyIDMyeiIgZmlsbD0iIzAwZDRmZiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIyNCIgZmlsbD0id2hpdGUiPvCfj68tL3RleHQ+PC9zdmc+',
-            tag: 'habit-reminder',
-            requireInteraction: false,
-            silent: false
-        });
-        
-        notification.onclick = function() {
-            window.focus();
-            notification.close();
-        };
-        
-        
-        setTimeout(() => notification.close(), 5000);
-    }
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const n = new Notification(title, {
+        body,
+        icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMzIgNjRDNDkuNjczIDY0IDY0IDQ5LjY3MyA2NCAzMlM0OS42NzMgMCAzMiAwIDAgMTQuMzI3IDAgMzJzMTQuMzI3IDMyIDMyIDMyeiIgZmlsbD0iIzAwZDRmZiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIyNCIgZmlsbD0id2hpdGUiPvCfj68tL3RleHQ+PC9zdmc+',
+        tag: 'habit-reminder',
+        requireInteraction: false,
+        silent: false
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+    setTimeout(() => n.close(), 5000);
 }
 
+const activeReminders = new Map();
+const reminderStateByHabit = new Map();
 
-let activeReminders = new Map();
+function getReminderState(habitId) {
+    const today = new Date().toDateString();
+    let s = reminderStateByHabit.get(habitId);
+    if (!s || s.day !== today) {
+        s = { day: today, count: 0, lastAt: 0 };
+        reminderStateByHabit.set(habitId, s);
+    }
+    return s;
+}
 
 function setupHabitReminder(habit) {
-    
     clearHabitReminder(habit.id);
-    
     if (!habit.reminder || habit.reminder.type === 'none') return;
-    
-    const now = new Date();
-    let nextReminderTime;
-    
+    const now = Date.now();
     if (habit.reminder.type === 'specific') {
-        
-        const [hours, minutes] = habit.reminder.time.split(':');
-        nextReminderTime = new Date();
-        nextReminderTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        
-        
-        if (nextReminderTime <= now) {
-            nextReminderTime.setDate(nextReminderTime.getDate() + 1);
-        }
-        
-        const timeUntilReminder = nextReminderTime - now;
+        const [h, m] = habit.reminder.time.split(':').map(Number);
+        const next = new Date();
+        next.setHours(h, m, 0, 0);
+        if (next.getTime() <= now) next.setDate(next.getDate() + 1);
+        const delay = Math.max(0, next.getTime() - now);
         const timeoutId = setTimeout(() => {
-            createNotification(
-                `⏰ ${t('time')}: ${habit.name}`,
-                habit.description || t('dontForgetHabit'),
-                habit.category?.emoji || '📝'
-            );
-            
-            setupHabitReminder(habit);
-        }, timeUntilReminder);
-        
-        activeReminders.set(habit.id, timeoutId);
-        
-    } else if (habit.reminder.type === 'interval') {
-        
-        let intervalMs;
-        const value = habit.reminder.interval.value;
-        const unit = habit.reminder.interval.unit;
-        
-        switch (unit) {
-            case 'minutes':
-                intervalMs = value * 60 * 1000;
-                break;
-            case 'hours':
-                intervalMs = value * 60 * 60 * 1000;
-                break;
-            case 'days':
-                intervalMs = value * 24 * 60 * 60 * 1000;
-                break;
-            default:
-                return;
-        }
-        
-        const intervalId = setInterval(() => {
-            
             if (!isHabitCompletedToday(habit.id)) {
                 createNotification(
-                    `🔔 ${t('reminder')}: ${habit.name}`,
-                    habit.description || t('timeToDoHabit'),
-                    habit.category?.emoji || '📝'
+                    `⏰ ${t('time')}: ${habit.name}`,
+                    habit.description || t('dontForgetHabit'),
+                    '📝'
                 );
             }
+            setupHabitReminder(habit);
+        }, delay);
+        activeReminders.set(habit.id, timeoutId);
+    } else if (habit.reminder.type === 'interval') {
+        let intervalMs;
+        const v = habit.reminder.interval?.value;
+        const u = habit.reminder.interval?.unit;
+        if (u === 'minutes') intervalMs = (v || 30) * 60 * 1000;
+        else if (u === 'hours') intervalMs = (v || 1) * 60 * 60 * 1000;
+        else if (u === 'days') intervalMs = (v || 1) * 24 * 60 * 60 * 1000;
+        else return;
+        intervalMs = Math.max(intervalMs, REMINDER_MIN_INTERVAL_MS);
+        const intervalId = setInterval(() => {
+            if (isHabitCompletedToday(habit.id)) return;
+            const state = getReminderState(habit.id);
+            const t = Date.now();
+            if (state.count >= REMINDER_MAX_PER_DAY) return;
+            if (t - state.lastAt < REMINDER_MIN_INTERVAL_MS) return;
+            state.count++;
+            state.lastAt = t;
+            createNotification(
+                `🔔 ${t('reminder')}: ${habit.name}`,
+                habit.description || t('timeToDoHabit'),
+                '📝'
+            );
         }, intervalMs);
-        
         activeReminders.set(habit.id, intervalId);
     }
 }
 
 function clearHabitReminder(habitId) {
-    if (activeReminders.has(habitId)) {
-        const id = activeReminders.get(habitId);
+    const id = activeReminders.get(habitId);
+    if (id != null) {
         clearTimeout(id);
         clearInterval(id);
         activeReminders.delete(habitId);
@@ -3255,24 +3403,37 @@ function clearHabitReminder(habitId) {
 
 function isHabitCompletedToday(habitId) {
     const today = new Date().toISOString().split('T')[0];
-    
-    const habit = habits.find(h => h.id === habitId);
-    return habit && habit.completedDates && habit.completedDates.includes(today);
+    return habitCompletedDatesMap.get(habitId)?.has(today) === true;
 }
 
 
 function setupAllReminders() {
-    if (currentUser) {
-        fetchHabits().then(() => {
-            
-            habits.forEach(habit => {
-                if (habit.reminder && habit.reminder.type !== 'none') {
-                    setupHabitReminder(habit);
-                }
-            });
+    if (!currentUser) return;
+    fetchHabits().then(() => {
+        habits.forEach(habit => {
+            if (habit.reminder && habit.reminder.type !== 'none') setupHabitReminder(habit);
         });
-    }
+    });
 }
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    setupAllReminders();
+    const today = getStepTodayKey();
+    if (stepCounter.lastReset !== today) {
+        stepCounter.steps = 0;
+        stepCounter.lastReset = today;
+        saveStepCounter();
+        updateStepCounterUI();
+    } else if (stepCounter.isNative && StepCounter) {
+        StepCounter.getSteps().then((data) => {
+            if (data && typeof data.steps === 'number') {
+                stepCounter.steps = data.steps;
+                updateStepCounterUI();
+            }
+        }).catch(() => {});
+    }
+});
 
 
 
@@ -3324,7 +3485,6 @@ function updateProfileUI() {
         
         updateProfileDisplay();
         
-        // Оновлюємо відображення рівня та звання
         updateLevelDisplay();
         
         
@@ -3351,34 +3511,34 @@ function updateProfileUI() {
 function validateNewUsername() {
     const usernameInput = document.getElementById('newUsername');
     if (!usernameInput) {
-        showValidationError('newUsername', t('usernameFieldNotFound'));
+        showValidationMessage('newUsername', t('usernameFieldNotFound'));
         return false;
     }
     
     const username = usernameInput.value.trim();
     
     if (!username) {
-        showValidationError('newUsername', t('usernameRequired'));
+        showValidationMessage('newUsername', t('usernameRequired'));
         return false;
     }
     
     if (username.length < 2) {
-        showValidationError('newUsername', t('usernameMinChars'));
+        showValidationMessage('newUsername', t('usernameMinChars'));
         return false;
     }
     
     if (username.length > 30) {
-        showValidationError('newUsername', t('usernameMaxChars'));
+        showValidationMessage('newUsername', t('usernameMaxChars'));
         return false;
     }
     
     if (!/^[a-zA-Zа-яА-ЯёЁіІїЇєЄ0-9_\s]+$/.test(username)) {
-        showValidationError('newUsername', t('usernameInvalidChars'));
+        showValidationMessage('newUsername', t('usernameInvalidChars'));
         return false;
     }
     
     if (currentUser && username === currentUser.username) {
-        showValidationError('newUsername', t('usernameSameAsCurrent'));
+        showValidationMessage('newUsername', t('usernameSameAsCurrent'));
         return false;
     }
     
@@ -3392,18 +3552,18 @@ function validateNewEmail() {
     const email = emailInput.value.trim();
     
     if (!email) {
-        showValidationError('newEmail', t('emailRequired'));
+        showValidationMessage('newEmail', t('emailRequired'));
         return false;
     }
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        showValidationError('newEmail', t('emailInvalid'));
+        showValidationMessage('newEmail', t('emailInvalid'));
         return false;
     }
     
     if (currentUser && email === currentUser.email) {
-        showValidationError('newEmail', t('emailSameAsCurrent'));
+        showValidationMessage('newEmail', t('emailSameAsCurrent'));
         return false;
     }
     
@@ -3417,14 +3577,14 @@ async function validateCurrentPasswordEdit() {
     const password = passwordInput.value;
     
     if (!password) {
-        showValidationError('currentPasswordEdit', t('enterCurrentPassword'));
+        showValidationMessage('currentPasswordEdit', t('enterCurrentPassword'));
         return false;
     }
     
     
     
     if (password.length < 3) {
-        showValidationError('currentPasswordEdit', t('wrongPassword'));
+        showValidationMessage('currentPasswordEdit', t('wrongPassword'));
         return false;
     }
     
@@ -3436,14 +3596,11 @@ async function validateCurrentPasswordEdit() {
 function validateNewPasswordEdit() {
     const passwordInput = document.getElementById('newPasswordEdit');
     const password = passwordInput.value;
-    
-    const result = validatePasswordStrength(password);
-    
-    if (!result.isValid) {
-        showValidationError('newPasswordEdit', result.message);
+    const result = checkPasswordStrength(password);
+    if (result.score < 3) {
+        showValidationMessage('newPasswordEdit', (result.feedback && result.feedback.length) ? result.feedback.join(', ') : t('passwordTooWeak'));
         return false;
     }
-    
     clearValidationError('newPasswordEdit');
     return true;
 }
@@ -3456,12 +3613,12 @@ function validateConfirmPasswordEdit() {
     const newPassword = newPasswordInput.value;
     
     if (!confirmPassword) {
-        showValidationError('confirmPasswordEdit', t('confirmNewPassword'));
+        showValidationMessage('confirmPasswordEdit', t('confirmNewPassword'));
         return false;
     }
     
     if (confirmPassword !== newPassword) {
-        showValidationError('confirmPasswordEdit', t('passwordsDoNotMatch'));
+        showValidationMessage('confirmPasswordEdit', t('passwordsDoNotMatch'));
         return false;
     }
     
@@ -3621,8 +3778,6 @@ function updateAvatarUI() {
 }
 
 
-// updateUserStats визначена вище як async функція, ця дублікатна видалена
-// Використовуй updateUserStats() з рядка 2735
 
 
 function toggleUserProfile() {
@@ -3855,44 +4010,6 @@ function closeAvatarPicker() {
     if (picker) {
         picker.classList.remove('active');
         setTimeout(() => picker.remove(), 300);
-    }
-}
-
-
-async function saveProfileSettings() {
-    const username = document.getElementById('settingsUsername').value.trim();
-    const email = document.getElementById('settingsEmail').value.trim();
-    
-    if (!username || !email) {
-        showError(t('fillAllFields'));
-        return;
-    }
-    
-    
-    userSettings.autoBackup = document.getElementById('autoBackup').value;
-    userSettings.interfaceLanguage = document.getElementById('interfaceLanguage').value;
-    
-    try {
-        
-        
-        
-        
-        
-        
-        
-        
-        if (currentUser) {
-            currentUser.username = username;
-            currentUser.email = email;
-        }
-        
-        saveUserSettings();
-        updateProfileUI();
-        closeModal('profileSettingsModal');
-        showSuccess(t('settingsSaved'));
-        
-    } catch (error) {
-        showError(t('settingsSaveError'));
     }
 }
 
@@ -4268,11 +4385,6 @@ function showValidationMessage(inputId, message, isError = true) {
 }
 
 
-function showValidationError(inputId, message) {
-    showValidationMessage(inputId, message, true);
-}
-
-
 function validateUsername() {
     const input = document.getElementById('settingsUsername');
     const username = input.value.trim();
@@ -4368,12 +4480,11 @@ function checkPasswordStrength(password) {
     return { score, strength, strengthText, feedback };
 }
 
-// Update password strength indicator
 function updatePasswordStrength(password) {
     const strengthElement = document.getElementById('passwordStrength');
     
     if (!strengthElement) {
-        return; // Елемент не існує, виходимо
+        return;
     }
     
     if (!password) {
@@ -4398,7 +4509,6 @@ function updatePasswordStrength(password) {
     `;
 }
 
-// Validate new password
 function validateNewPassword() {
     const input = document.getElementById('newPassword');
     const password = input.value;
@@ -4406,7 +4516,7 @@ function validateNewPassword() {
     if (!password) {
         showValidationMessage('newPassword', '');
         updatePasswordStrength('');
-        return true; // Optional field
+        return true;
     }
     
     updatePasswordStrength(password);
@@ -4424,7 +4534,6 @@ function validateNewPassword() {
     
     showValidationMessage('newPassword', t('passwordStrong'), false);
     
-    // Also validate confirm password if it's filled
     const confirmInput = document.getElementById('confirmPassword');
     if (confirmInput.value) {
         validateConfirmPassword();
@@ -4433,7 +4542,6 @@ function validateNewPassword() {
     return true;
 }
 
-// Validate confirm password
 function validateConfirmPassword() {
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
@@ -4457,13 +4565,10 @@ function validateConfirmPassword() {
     return true;
 }
 
-// Enhanced save profile settings
 async function saveProfileSettings() {
-    // Validate all fields
     const isUsernameValid = validateUsername();
     const isEmailValid = validateEmail();
     
-    // Check if password change is requested
     const currentPassword = document.getElementById('currentPassword').value;
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
@@ -4471,7 +4576,6 @@ async function saveProfileSettings() {
     let isPasswordValid = true;
     
     if (currentPassword || newPassword || confirmPassword) {
-        // Password change requested
         const isCurrentPasswordValid = await validateCurrentPassword();
         const isNewPasswordValid = validateNewPassword();
         const isConfirmPasswordValid = validateConfirmPassword();
@@ -4490,37 +4594,26 @@ async function saveProfileSettings() {
     }    const username = document.getElementById('settingsUsername').value.trim();
     const email = document.getElementById('settingsEmail').value.trim();
     
-    // Update select values
     userSettings.autoBackup = document.getElementById('autoBackup').value;
     userSettings.interfaceLanguage = document.getElementById('interfaceLanguage').value;
     
     try {
-        // Prepare update data
         const updateData = {
             username,
             email,
             settings: userSettings
         };
         
-        // Add password if changing
         if (newPassword) {
             updateData.currentPassword = currentPassword;
             updateData.newPassword = newPassword;
         }
         
-        // TODO: Send to API
-        // const response = await fetch(`${API_BASE}/profile`, {
-        //     method: 'PUT',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(updateData)
-        // });
         
-        // For now, just update locally
         if (currentUser) {
             currentUser.username = username;
             currentUser.email = email;
             if (newPassword) {
-                // In real app, password would be handled securely by backend
                 showSuccess(t('passwordChanged'));
             }
         }
@@ -4530,7 +4623,6 @@ async function saveProfileSettings() {
         closeModal('profileSettingsModal');
         showSuccess(t('profileSettingsSaved'));
         
-        // Clear password fields
         document.getElementById('currentPassword').value = '';
         document.getElementById('newPassword').value = '';
         document.getElementById('confirmPassword').value = '';
@@ -4544,7 +4636,6 @@ async function saveProfileSettings() {
     }
 }
 
-// Add password strength checking on input
 document.addEventListener('DOMContentLoaded', function() {
     const newPasswordInput = document.getElementById('newPassword');
     if (newPasswordInput) {
@@ -4554,7 +4645,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Update existing login function to initialize profile
 const originalSetCurrentUser = setCurrentUser || function() {};
 function setCurrentUser(user) {
     currentUser = user;
@@ -4564,30 +4654,27 @@ function setCurrentUser(user) {
     updateProfileUI();
 }
 
-// ========================================
-// СИСТЕМА НАГОРОД ТА БЕЙДЖІВ
-// ========================================
 
-// Відкриття модалки нагород
 function openAwardsModal() {
-    updateAwardsDisplay();
-    openModal('awardsModal');
+    loadUserProgress().then(() => {
+        updateAwardsDisplay();
+        openModal('awardsModal');
+    });
 }
 
-// Оновлення відображення нагород
 function updateAwardsDisplay() {
     const currentLevel = getCurrentLevel();
-    
-    // Оновлюємо загальний прогрес
-    document.getElementById('totalXP').textContent = `${userProgress.xp} XP`;
-    document.getElementById('currentLevelText').textContent = `${currentLevel.name} (${currentLevel.level})`;
-    document.getElementById('totalCompleted').textContent = userProgress.totalHabitsCompleted;
-    document.getElementById('bestStreak').textContent = `${userProgress.longestStreak} ${t('days')}`;
-    
-    // Отримані бейджі
+    const totalXPEl = document.getElementById('totalXP');
+    const currentLevelTextEl = document.getElementById('currentLevelText');
+    const totalCompletedEl = document.getElementById('totalCompleted');
+    const bestStreakEl = document.getElementById('bestStreak');
+    if (totalXPEl) totalXPEl.textContent = `${userProgress.xp} XP`;
+    if (currentLevelTextEl) currentLevelTextEl.textContent = `${currentLevel.name} (${currentLevel.level})`;
+    if (totalCompletedEl) totalCompletedEl.textContent = userProgress.totalHabitsCompleted;
+    if (bestStreakEl) bestStreakEl.textContent = `${userProgress.longestStreak} ${t('days')}`;
     const earnedBadgesEl = document.getElementById('earnedBadges');
     const earnedBadges = userProgress.earnedBadges || [];
-    
+    if (!earnedBadgesEl) return;
     if (earnedBadges.length === 0) {
         earnedBadgesEl.innerHTML = `
             <div class="empty-state" style="padding: 20px; text-align: center;">
@@ -4609,11 +4696,9 @@ function updateAwardsDisplay() {
         }).join('');
     }
     
-    // Доступні (заблоковані) бейджі
     const availableBadgesEl = document.getElementById('availableBadges');
     const lockedBadges = Object.values(badges).filter(b => !earnedBadges.includes(b.id));
-    
-    availableBadgesEl.innerHTML = lockedBadges.map(badge => `
+    if (availableBadgesEl) availableBadgesEl.innerHTML = lockedBadges.map(badge => `
         <div class="badge-item locked">
             <span class="badge-emoji">${badge.emoji}</span>
             <div class="badge-title">${badge.name}</div>
@@ -4622,10 +4707,6 @@ function updateAwardsDisplay() {
     `).join('');
 }
 
-// Додаємо кнопку нагород в header якщо її немає
-// ВИДАЛЕНО - кнопка вже є в HTML
 
-// Ініціалізація системи нагород при завантаженні
 document.addEventListener('DOMContentLoaded', function() {
-    // Кнопка нагород вже є в HTML, нічого додавати не потрібно
 });
