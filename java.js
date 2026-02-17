@@ -1877,12 +1877,24 @@ function renderHabits() {
                                     <span>${category.name}</span>
                                 </div>
                             ` : ''}
-                            ${habit.time ? `
-                                <div class="habit-time">
-                                    <span>🕐</span>
-                                    <span>${habit.time}</span>
-                                </div>
-                            ` : ''}
+                            ${habit.reminder ? (() => {
+                                const reminder = habit.reminder;
+                                let reminderText = '';
+                                if (reminder.type === 'specific' && reminder.time) {
+                                    reminderText = `⏰ О ${reminder.time}`;
+                                } else if (reminder.type === 'interval' && reminder.interval) {
+                                    const interval = reminder.interval;
+                                    const unitNames = {
+                                        'minutes': t('minute'),
+                                        'hours': t('hour'),
+                                        'days': t('day')
+                                    };
+                                    reminderText = `🔄 Кожні ${interval.value} ${unitNames[interval.unit] || interval.unit}`;
+                                } else {
+                                    reminderText = '🔕 Без напоминаний';
+                                }
+                                return `<div class="habit-reminder"><span>${reminderText}</span></div>`;
+                            })() : ''}
                         </div>
                     </div>
                     <div class="habit-actions">
@@ -2388,18 +2400,9 @@ function editHabit(habitId) {
     
     document.getElementById('editHabitName').value = habit.name;
     document.getElementById('editHabitDesc').value = habit.description || '';
-    
-    
-    if (habit.time) {
-        document.getElementById('editHabitTime').value = habit.time;
-        const [hours, minutes] = habit.time.split(':');
-        editSelectedHour = parseInt(hours);
-        editSelectedMinute = parseInt(minutes);
-    } else {
-        document.getElementById('editHabitTime').value = '';
-        editSelectedHour = null;
-        editSelectedMinute = null;
-    }
+
+    editSelectedHour = null;
+    editSelectedMinute = null;
     
     
     const categoryInput = document.getElementById('editHabitCategory');
@@ -3046,7 +3049,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const name = document.getElementById('editHabitName').value.trim();
         const description = document.getElementById('editHabitDesc').value.trim();
-        const time = document.getElementById('editHabitTime').value;
+        const time = null;
         const categoryInput = document.getElementById('editHabitCategory');
         const categoryId = categoryInput.dataset.categoryId;
         
