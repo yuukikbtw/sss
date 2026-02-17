@@ -1375,7 +1375,8 @@ async function login(email, password) {
             updateUIForLoggedInUser();
             closeModal('authModal');
             showSuccess(data.message);
-            fetchHabits();
+            await fetchHabits();
+            await loadUserProgress();
         } else {
             showError(data.error);
         }
@@ -1442,8 +1443,8 @@ async function checkAuth() {
             currentUser = data.user;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             updateUIForLoggedInUser();
-            fetchHabits();
-            loadUserProgress();
+            await fetchHabits();
+            await loadUserProgress();
             return;
         }
     } catch (error) {
@@ -1455,8 +1456,8 @@ async function checkAuth() {
         try {
             currentUser = JSON.parse(storedUser);
             updateUIForLoggedInUser();
-            fetchHabits();
-            loadUserProgress();
+            await fetchHabits();
+            await loadUserProgress();
             return;
         } catch (error) {
             localStorage.removeItem('currentUser');
@@ -1648,44 +1649,8 @@ async function createHabit(data) {
             showSuccess(t('habitAdded'));
             await fetchHabits();
             
-            
-            userProgress.createdHabits++;
-            
-            
-            const habitCreationBadges = [];
-            
-            
-            if (userProgress.createdHabits === 25 && !userProgress.earnedBadges.includes('habitMaster')) {
-                habitCreationBadges.push('habitMaster');
-            }
-            
-            
-            const uniqueCategories = new Set(habits.map(h => h.category));
-            if (uniqueCategories.size >= defaultCategories.length && !userProgress.earnedBadges.includes('categoryCollector')) {
-                habitCreationBadges.push('categoryCollector');
-            }
-            
-            
-            habitCreationBadges.forEach(badgeId => {
-                userProgress.earnedBadges.push(badgeId);
-                showBadgeNotification(badges[badgeId]);
-            });
-            
-            
-            await awardXP(5);
-            setTimeout(() => {
-                showXPNotification(5);
-            }, 300);
-            
-            if (habitCreationBadges.length > 0) {
-                saveUserProgress();
-            }
-            
-            
-            const newHabit = await response.json();
-            if (newHabit.reminder && newHabit.reminder.type !== 'none') {
-                setupHabitReminder(newHabit);
-            }
+            // Загружаем обновленный прогресс с сервера
+            await loadUserProgress();
             
             closeModal('addHabitModal');
             document.getElementById('addHabitForm').reset();
@@ -2059,56 +2024,9 @@ async function toggleDay(habitId, date) {
             if (newStatus === 1) {
                 completedSet.add(date);
                 showSuccess(t('habitMarked'));
-                const isToday = (date === todayStr);
-                
-                const xpKey = `${habitId}_${date}`;
-                const alreadyClaimedXP = userProgress.xpClaimedDays && userProgress.xpClaimedDays[xpKey];
-                
-                const habit = habits.find(h => String(h.id) === String(habitId));
-                if (habit && isToday && !alreadyClaimedXP) {
-                    if (!userProgress.xpClaimedDays) {
-                        userProgress.xpClaimedDays = {};
-                    }
-                    userProgress.xpClaimedDays[xpKey] = true;
-                    
-                    userProgress.totalHabitsCompleted++;
-                    
-                    if (habit.category) {
-                        userProgress.categoryStats[habit.category] = (userProgress.categoryStats[habit.category] || 0) + 1;
-                    }
-                    
-                    userProgress.currentStreaks[habitId] = (userProgress.currentStreaks[habitId] || 0) + 1;
-                    
-                    const currentStreak = userProgress.currentStreaks[habitId];
-                    if (currentStreak > userProgress.longestStreak) {
-                        userProgress.longestStreak = currentStreak;
-                    }
-                    
-                    const earnedXP = calculateXP(habit);
-                    await awardXP(earnedXP);
-                    checkBadges(habit, new Date());
-                    
-                    setTimeout(() => {
-                        showXPNotification(earnedXP);
-                    }, 500);
-                } else if (alreadyClaimedXP) {
-                    console.log('XP за цей день вже отримано, пропускаємо');
-                }
             } else {
                 completedSet.delete(date);
                 showInfo(t('markRemoved'));
-                const isToday = (date === todayStr);
-                
-                const habit = habits.find(h => String(h.id) === String(habitId));
-                if (habit && isToday) {
-                    if (userProgress.totalHabitsCompleted > 0) {
-                        userProgress.totalHabitsCompleted--;
-                    }
-                    if (habit.category && userProgress.categoryStats[habit.category] > 0) {
-                        userProgress.categoryStats[habit.category]--;
-                    }
-                    userProgress.currentStreaks[habitId] = 0;
-                }
             }
             
             if (String(selectedHabitId) === String(habitId)) {
