@@ -1,33 +1,121 @@
+const PRODUCTION_API_BASE = 'https://sss-vcq4.onrender.com/api';
 
 function getAutoApiBase() {
+    const isNative = typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+    if (isNative) return PRODUCTION_API_BASE;
     const currentHost = window.location.hostname;
     const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
-    
     if (window.location.protocol === 'https:' || currentHost.includes('render.com') || currentHost.includes('onrender.com')) {
         return `${window.location.protocol}//${currentHost}/api`;
     }
-    
-    if (currentPort === '5001') {
-        return `${window.location.protocol}//${currentHost}:5001/api`;
-    }
-    
-    if (currentPort === '8000') {
-        return `${window.location.protocol}//${currentHost}:5001/api`;
-    }
-    
-    return 'http://localhost:5001/api';
+    if (currentPort === '5001') return `${window.location.protocol}//${currentHost}:5001/api`;
+    if (currentPort === '8000') return `${window.location.protocol}//${currentHost}:5001/api`;
+    return PRODUCTION_API_BASE;
 }
 
 let API_BASE = getAutoApiBase();
 let isServerOnline = false;
 let serverCheckInterval = null;
+let isOfflineMode = false;
 
-const POSSIBLE_API_URLS = [
-    getAutoApiBase(),
-    'http://localhost:5001/api',
-    'http://127.0.0.1:5001/api',
-    'https://sss-vcq4.onrender.com/api'
-];
+// ============================================
+// OFFLINE MODE - Локальная база данных
+// ============================================
+
+// Инициализация offline базы данных
+function initOfflineDatabase() {
+    // Создаём demo пользователя если его нет
+    if (!localStorage.getItem('currentUser')) {
+        const demoUser = {
+            id: 'demo_' + Date.now(),
+            username: '📱 Demo User',
+            email: 'demo@offline.local',
+            createdAt: new Date().toISOString()
+        };
+        localStorage.setItem('currentUser', JSON.stringify(demoUser));
+        localStorage.setItem('offlineModeUser', 'true');
+        currentUser = demoUser;
+        console.log('✅ [OFFLINE] Demo пользователь создан');
+    }
+    
+    // Создаём пустой массив привычек если его нет
+    if (!localStorage.getItem('offlineHabits')) {
+        const defaultHabits = [
+            {
+                id: 'demo_habit_1',
+                name: '🏃‍♂️ ' + t('sport'),
+                description: 'Упражнения',
+                category: 'sport',
+                difficulty: 'medium',
+                createdAt: new Date().toISOString(),
+                completedDates: [],
+                reminder: { type: 'none' }
+            },
+            {
+                id: 'demo_habit_2',
+                name: '📚 ' + t('study'),
+                description: 'Учёба',
+                category: 'study',
+                difficulty: 'medium',
+                createdAt: new Date().toISOString(),
+                completedDates: [],
+                reminder: { type: 'none' }
+            }
+        ];
+        localStorage.setItem('offlineHabits', JSON.stringify(defaultHabits));
+        habits = defaultHabits;
+        console.log('✅ [OFFLINE] Demo привычки созданы');
+    } else {
+        habits = JSON.parse(localStorage.getItem('offlineHabits'));
+    }
+}
+
+// Сохранение привычек в offlineHabits
+function saveOfflineHabits() {
+    localStorage.setItem('offlineHabits', JSON.stringify(habits));
+    console.log('💾 [OFFLINE] Привычки сохранены в localStorage');
+}
+
+// Сохранение прогресса пользователя
+function saveOfflineProgress() {
+    localStorage.setItem('userProgress', JSON.stringify(userProgress));
+    console.log('💾 [OFFLINE] Прогресс пользователя сохранён');
+}
+
+// Проверка доступности сервера
+async function checkServerAvailability() {
+    try {
+        const response = await fetch(`${API_BASE}/health`, { 
+            method: 'GET',
+            timeout: 3000 
+        });
+        return response.ok;
+    } catch (error) {
+        return false;
+    }
+}
+
+// Переключение в режим offline
+function enableOfflineMode() {
+    isOfflineMode = true;
+    updateConnectionStatus(false);
+    initOfflineDatabase();
+    
+    const statusEl = document.getElementById('connectionStatus');
+    if (statusEl) {
+        statusEl.title = t('offline') + ' - ' + t('localDataOnly');
+    }
+    
+    console.log('🔴 [OFFLINE] Приложение в режиме offline (без сервера)');
+    showInfo('📱 ' + (t('offlineMode') || 'Offline Mode - работаю локально'));
+}
+
+// Переключение в режим online
+function disableOfflineMode() {
+    isOfflineMode = false;
+    updateConnectionStatus(true);
+    console.log('🟢 [ONLINE] Приложение в режиме online');
+}
 
 
 function updateConnectionStatus(online) {
@@ -41,33 +129,6 @@ function updateConnectionStatus(online) {
             : `<span class="status-icon">●</span><span class="status-text">${statusText}</span>`;
     }
     console.log(online ? '[ONLINE] ' + t('online') : '[OFFLINE] ' + t('offline'));
-}
-
-// Проверка доступности сервера
-async function checkServerAvailability() {
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        
-        const testUrl = `${API_BASE}/me`;
-        console.log('[CHECK] Проверяем сервер:', testUrl);
-        
-        const response = await fetch(testUrl, { 
-            method: 'HEAD',
-            signal: controller.signal,
-            cache: 'no-store',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-            }
-        });
-        
-        clearTimeout(timeoutId);
-        console.log('✅ [CHECK] Сервер доступен, статус:', response.status);
-        return true;
-    } catch (error) {
-        console.warn('⚠️ [CHECK] Сервер недоступен -', error.message);
-        return false;
-    }
 }
 
 
@@ -195,18 +256,16 @@ let userProgress = {
 
 
 function initUserProgress() {
-    // Прогресс загружается с сервера через loadUserProgress()
-    // Не используем localStorage для прогресса
+    const stored = localStorage.getItem('userProgress');
+    if (stored) {
+        userProgress = { ...userProgress, ...JSON.parse(stored) };
+    }
     updateLevelDisplay();
 }
 
 
-async function saveUserProgress() {
-    // Прогресс сохраняется автоматически на сервере
-    // Просто загружаем актуальные данные
-    if (currentUser) {
-        await loadUserProgress();
-    }
+function saveUserProgress() {
+    localStorage.setItem('userProgress', JSON.stringify(userProgress));
 }
 
 
@@ -227,7 +286,7 @@ function calculateXP(habit) {
 }
 
 
-async function awardXP(amount) {
+function awardXP(amount) {
     const oldLevel = userProgress.level;
     userProgress.xp += amount;
     
@@ -239,7 +298,7 @@ async function awardXP(amount) {
     }
     
     updateLevelDisplay();
-    await saveUserProgress();
+    saveUserProgress();
 }
 
 
@@ -330,7 +389,7 @@ function checkBadges(habit, completedTime) {
     });
     
     if (newBadges.length > 0) {
-        saveUserProgress(); // Async call - will update from server
+        saveUserProgress();
     }
 }
 
@@ -755,6 +814,7 @@ function selectReminderType(type, element) {
     specificSettings.style.display = type === 'specific' ? 'block' : 'none';
     intervalSettings.style.display = type === 'interval' ? 'block' : 'none';
     
+    // Если выбран тип напоминания (не "none"), запрашиваем разрешение на уведомления
     if (type !== 'none') {
         setTimeout(async () => {
             const hasPermission = await requestNotificationPermission();
@@ -1106,6 +1166,7 @@ function selectEditReminderType(type, element) {
     specificSettings.style.display = type === 'specific' ? 'block' : 'none';
     intervalSettings.style.display = type === 'interval' ? 'block' : 'none';
     
+    // Если выбран тип напоминания (не "none"), запрашиваем разрешение на уведомления
     if (type !== 'none') {
         setTimeout(async () => {
             const hasPermission = await requestNotificationPermission();
@@ -1345,21 +1406,20 @@ function switchAuthMode(mode) {
 
 async function login(email, password) {
     try {
-        console.log('[LOGIN] Starting login for:', email);
         const response = await apiFetch(`${API_BASE}/login`, {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
         
         const data = await response.json();
-        console.log('[LOGIN] Response status:', response.status, 'Token received:', !!data.token);
+        console.log('🔐 Ответ логина:', { status: response.status, token: data.token ? 'получен' : 'не получен', user: data.user?.email });
         
         if (response.ok) {
             currentUser = data.user;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             if (data.token) {
                 localStorage.setItem('authToken', data.token);
-                console.log('[LOGIN] Token saved');
+                console.log('✅ Токен сохранён в localStorage:', data.token.substring(0, 20) + '...');
             }
             
             
@@ -1376,17 +1436,13 @@ async function login(email, password) {
             updateUIForLoggedInUser();
             closeModal('authModal');
             showSuccess(data.message);
-            console.log('[LOGIN] Fetching habits...');
-            await fetchHabits();
-            console.log('[LOGIN] Loading progress...');
-            await loadUserProgress();
-            console.log('[LOGIN] Login complete');
+            fetchHabits();
         } else {
             showError(data.error);
         }
     } catch (error) {
         showError(t('networkError'));
-        console.error('[LOGIN] Error:', error);
+        console.error(error);
     }
 }
 
@@ -1439,63 +1495,90 @@ async function logout() {
 
 async function checkAuth() {
     try {
-        console.log('[AUTH] Checking authentication...');
+        // Пытаемся проверить доступность сервера
+        const isServerAvailable = await checkServerAvailability();
+        
+        if (!isServerAvailable) {
+            console.warn('⚠️ [OFFLINE] Сервер недоступен, переходим в оффлайн режим');
+            enableOfflineMode();
+            
+            // Загружаем локального пользователя если есть
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    currentUser = JSON.parse(storedUser);
+                    updateUIForLoggedInUser();
+                    renderHabits();
+                    loadUserProgress();
+                    initStepCounter();
+                    return;
+                } catch (error) {
+                    console.warn('Ошибка загрузки локального пользователя:', error);
+                }
+            }
+            
+            // Если нет локального пользователя, создаём demo
+            enableOfflineMode();
+            return;
+        }
+        
+        // Сервер доступен, пытаемся авторизоваться
+        disableOfflineMode();
         const response = await apiFetch(`${API_BASE}/me`);
         updateConnectionStatus(true);
         
         if (response.ok) {
             const data = await response.json();
-            console.log('[AUTH] User authenticated:', data.user?.email);
             currentUser = data.user;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             updateUIForLoggedInUser();
-            console.log('[AUTH] Fetching habits...');
-            await fetchHabits();
-            console.log('[AUTH] Loading user progress...');
-            await loadUserProgress();
-            console.log('[AUTH] All data loaded');
+            fetchHabits();
+            loadUserProgress();
             return;
         }
     } catch (error) {
-        console.error('[AUTH] Error checking auth:', error);
+        console.warn('Ошибка проверки авторизации, пытаемся использовать локальные данные:', error);
         updateConnectionStatus(false);
+        enableOfflineMode();
     }
     
+    // Fallback: используем локальные данные
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
         try {
-            console.log('[AUTH] Using stored user data');
             currentUser = JSON.parse(storedUser);
             updateUIForLoggedInUser();
-            await fetchHabits();
-            await loadUserProgress();
-            console.log('[AUTH] All data loaded from storage');
+            renderHabits();
+            loadUserProgress();
+            initStepCounter();
             return;
         } catch (error) {
-            console.error('[AUTH] Error loading stored user:', error);
             localStorage.removeItem('currentUser');
         }
     }
     
-    console.log('[AUTH] No authentication found, showing guest mode');
-    updateUIForLoggedOutUser();
+    // Если совсем нет данных - создаём demo пользователя
+    enableOfflineMode();
+    updateUIForLoggedInUser();
 }
 
 async function loadUserProgress() {
     try {
-        console.log('[PROGRESS] Loading user progress...');
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.warn('No auth token found');
+            return;
+        }
         
         const response = await apiFetch(`${API_BASE}/user/progress`);
-        console.log('[PROGRESS API] Response status:', response.status);
         
         if (!response.ok) {
-            console.error('[PROGRESS API] Error returned:', response.status);
+            console.error('Progress API returned:', response.status);
             return;
         }
         
         const data = await response.json();
-        console.log('[PROGRESS API] Raw data from server:', data);
-        console.log('[PROGRESS API] XP:', data.xp, 'Level:', data.level, 'Badges:', data.earned_badges);
+        console.log('✅ Progress loaded:', data);
         
         userProgress.xp = data.xp || 0;
         userProgress.level = data.level || 1;
@@ -1503,32 +1586,24 @@ async function loadUserProgress() {
         userProgress.longestStreak = data.longest_streak || 0;
         userProgress.earnedBadges = data.earned_badges || [];
         
-        console.log('[PROGRESS] Updated userProgress object:', userProgress);
-        
         if (document.getElementById('userLevel')) {
             document.getElementById('userLevel').innerHTML = `
                 <span class="level-emoji">${data.level_emoji || '⭐'}</span>
                 <span class="level-name">${data.level_name || 'Level'}</span>
                 <span class="level-number">Lvl ${data.level}</span>
             `;
-            console.log('[PROGRESS UI] Updated userLevel element');
-        } else {
-            console.warn('[PROGRESS UI] userLevel element not found');
         }
         
         if (document.getElementById('userHabitsCount')) {
             document.getElementById('userHabitsCount').textContent = data.total_completed || 0;
-            console.log('[PROGRESS UI] Updated userHabitsCount:', data.total_completed);
         }
         
         displayBadges(data.earned_badges || []);
-        console.log('[PROGRESS] Displayed badges');
         
         updateLevelDisplay();
-        console.log('[PROGRESS] Called updateLevelDisplay()');
         
     } catch (error) {
-        console.error('[PROGRESS] Error loading progress:', error);
+        console.error('Error loading progress:', error);
     }
 }
 
@@ -1634,6 +1709,20 @@ function renderHabitsForGuest() {
 
 async function fetchHabits() {
     try {
+        // В режиме offline - загружаем привычки из localStorage
+        if (isOfflineMode) {
+            console.log('📂 [OFFLINE] Загружаем привычки из localStorage');
+            const stored = localStorage.getItem('offlineHabits');
+            if (stored) {
+                habits = JSON.parse(stored);
+            } else {
+                initOfflineDatabase(); // Создаём привычки по умолчанию
+            }
+            renderHabits();
+            updateUserStats();
+            return;
+        }
+        
         const response = await apiFetch(`${API_BASE}/habits`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -1653,8 +1742,24 @@ async function fetchHabits() {
             });
         }
     } catch (error) {
-        showError(t('habitsLoadError'));
-        console.error('Ошибка в fetchHabits:', error);
+        console.warn('⚠️ Ошибка загрузки привычек с сервера, пытаемся usar localStorage:', error);
+        
+        // Fallback на localStorage
+        try {
+            const stored = localStorage.getItem('offlineHabits');
+            if (stored) {
+                habits = JSON.parse(stored);
+                console.log('✅ Привычки загружены из localStorage');
+                enableOfflineMode();
+            } else {
+                initOfflineDatabase();
+            }
+            renderHabits();
+            updateUserStats();
+        } catch (e) {
+            showError(t('habitsLoadError'));
+            console.error('Ошибка в fetchHabits:', e);
+        }
     }
 }
 
@@ -1669,8 +1774,44 @@ async function createHabit(data) {
             showSuccess(t('habitAdded'));
             await fetchHabits();
             
-            // Загружаем обновленный прогресс с сервера
-            await loadUserProgress();
+            
+            userProgress.createdHabits++;
+            
+            
+            const habitCreationBadges = [];
+            
+            
+            if (userProgress.createdHabits === 25 && !userProgress.earnedBadges.includes('habitMaster')) {
+                habitCreationBadges.push('habitMaster');
+            }
+            
+            
+            const uniqueCategories = new Set(habits.map(h => h.category));
+            if (uniqueCategories.size >= defaultCategories.length && !userProgress.earnedBadges.includes('categoryCollector')) {
+                habitCreationBadges.push('categoryCollector');
+            }
+            
+            
+            habitCreationBadges.forEach(badgeId => {
+                userProgress.earnedBadges.push(badgeId);
+                showBadgeNotification(badges[badgeId]);
+            });
+            
+            
+            awardXP(5);
+            setTimeout(() => {
+                showXPNotification(5);
+            }, 300);
+            
+            if (habitCreationBadges.length > 0) {
+                saveUserProgress();
+            }
+            
+            
+            const newHabit = await response.json();
+            if (newHabit.reminder && newHabit.reminder.type !== 'none') {
+                setupHabitReminder(newHabit);
+            }
             
             closeModal('addHabitModal');
             document.getElementById('addHabitForm').reset();
@@ -1877,24 +2018,12 @@ function renderHabits() {
                                     <span>${category.name}</span>
                                 </div>
                             ` : ''}
-                            ${habit.reminder ? (() => {
-                                const reminder = habit.reminder;
-                                let reminderText = '';
-                                if (reminder.type === 'specific' && reminder.time) {
-                                    reminderText = `⏰ О ${reminder.time}`;
-                                } else if (reminder.type === 'interval' && reminder.interval) {
-                                    const interval = reminder.interval;
-                                    const unitNames = {
-                                        'minutes': t('minute'),
-                                        'hours': t('hour'),
-                                        'days': t('day')
-                                    };
-                                    reminderText = `🔄 Кожні ${interval.value} ${unitNames[interval.unit] || interval.unit}`;
-                                } else {
-                                    reminderText = '🔕 Без напоминаний';
-                                }
-                                return `<div class="habit-reminder"><span>${reminderText}</span></div>`;
-                            })() : ''}
+                            ${habit.time ? `
+                                <div class="habit-time">
+                                    <span>🕐</span>
+                                    <span>${habit.time}</span>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                     <div class="habit-actions">
@@ -2056,9 +2185,56 @@ async function toggleDay(habitId, date) {
             if (newStatus === 1) {
                 completedSet.add(date);
                 showSuccess(t('habitMarked'));
+                const isToday = (date === todayStr);
+                
+                const xpKey = `${habitId}_${date}`;
+                const alreadyClaimedXP = userProgress.xpClaimedDays && userProgress.xpClaimedDays[xpKey];
+                
+                const habit = habits.find(h => String(h.id) === String(habitId));
+                if (habit && isToday && !alreadyClaimedXP) {
+                    if (!userProgress.xpClaimedDays) {
+                        userProgress.xpClaimedDays = {};
+                    }
+                    userProgress.xpClaimedDays[xpKey] = true;
+                    
+                    userProgress.totalHabitsCompleted++;
+                    
+                    if (habit.category) {
+                        userProgress.categoryStats[habit.category] = (userProgress.categoryStats[habit.category] || 0) + 1;
+                    }
+                    
+                    userProgress.currentStreaks[habitId] = (userProgress.currentStreaks[habitId] || 0) + 1;
+                    
+                    const currentStreak = userProgress.currentStreaks[habitId];
+                    if (currentStreak > userProgress.longestStreak) {
+                        userProgress.longestStreak = currentStreak;
+                    }
+                    
+                    const earnedXP = calculateXP(habit);
+                    awardXP(earnedXP);
+                    checkBadges(habit, new Date());
+                    
+                    setTimeout(() => {
+                        showXPNotification(earnedXP);
+                    }, 500);
+                } else if (alreadyClaimedXP) {
+                    console.log('XP за цей день вже отримано, пропускаємо');
+                }
             } else {
                 completedSet.delete(date);
                 showInfo(t('markRemoved'));
+                const isToday = (date === todayStr);
+                
+                const habit = habits.find(h => String(h.id) === String(habitId));
+                if (habit && isToday) {
+                    if (userProgress.totalHabitsCompleted > 0) {
+                        userProgress.totalHabitsCompleted--;
+                    }
+                    if (habit.category && userProgress.categoryStats[habit.category] > 0) {
+                        userProgress.categoryStats[habit.category]--;
+                    }
+                    userProgress.currentStreaks[habitId] = 0;
+                }
             }
             
             if (String(selectedHabitId) === String(habitId)) {
@@ -2066,8 +2242,6 @@ async function toggleDay(habitId, date) {
             }
             
             updateUserStats();
-            // Загружаем обновленный прогресс с сервера
-            await loadUserProgress();
         } else {
             console.error('Сервер вернул ошибку:', response.status);
             if (newStatus === 1) {
@@ -2400,9 +2574,18 @@ function editHabit(habitId) {
     
     document.getElementById('editHabitName').value = habit.name;
     document.getElementById('editHabitDesc').value = habit.description || '';
-
-    editSelectedHour = null;
-    editSelectedMinute = null;
+    
+    
+    if (habit.time) {
+        document.getElementById('editHabitTime').value = habit.time;
+        const [hours, minutes] = habit.time.split(':');
+        editSelectedHour = parseInt(hours);
+        editSelectedMinute = parseInt(minutes);
+    } else {
+        document.getElementById('editHabitTime').value = '';
+        editSelectedHour = null;
+        editSelectedMinute = null;
+    }
     
     
     const categoryInput = document.getElementById('editHabitCategory');
@@ -2530,6 +2713,7 @@ function addStep() {
 
 async function requestMotionPermission() {
     try {
+        // iOS 13+ требует явного разрешения на DeviceMotionEvent
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
             const permission = await DeviceMotionEvent.requestPermission();
             if (permission === 'granted') {
@@ -2581,6 +2765,7 @@ async function initStepCounter() {
         localStorage.setItem('stepCounter', JSON.stringify(stepCounter));
     }
     if (StepCounter && window.Capacitor?.isNativePlatform()) {
+        // На Capacitor/Android - сначала запрашиваем Activity Recognition
         const activityPerm = await requestActivityPermission();
         if (activityPerm) {
             initNativeStepCounter();
@@ -2592,12 +2777,15 @@ async function initStepCounter() {
         stepCounter.isSupported = true;
         startAccelerometerStepCounter();
     } else if (typeof DeviceMotionEvent !== 'undefined') {
+        // На iOS - запрашиваем разрешение на датчик движения при инициализации
         if (typeof DeviceMotionEvent.requestPermission === 'function') {
+            // На iOS требуется явный запрос
             const hasPermission = await requestMotionPermission();
             if (!hasPermission) {
                 addStepCounterPermissionButton();
             }
         } else {
+            // На Android без Capacitor и на інших платформах
             stepCounter.isSupported = true;
             startDeviceMotionStepCounter();
         }
@@ -2612,7 +2800,7 @@ function addStepCounterPermissionButton() {
     if (!stepCounterSection) return;
     
     const existingBtn = stepCounterSection.querySelector('.motion-permission-btn');
-    if (existingBtn) return;
+    if (existingBtn) return; // Кнопка вже є
     
     const btn = document.createElement('div');
     btn.className = 'motion-permission-btn';
@@ -2869,59 +3057,18 @@ async function updateUserStats() {
 }
 
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     initCategories();
+    initUserProgress(); 
+    checkAuth(); 
     initStepCounter();
-
-    initUserProfile();
-    initProfileEditing();
-
-    console.log('[INIT] Initializing...');
     
     const stepSection = document.getElementById('stepCounterSection');
     if (stepSection && stepCounter.isSupported) {
         stepSection.style.display = 'block';
     }
-
     
-    // Загружаем все данные пользователя
-    console.log('[INIT] Calling checkAuth...');
-    await checkAuth();
-    console.log('[INIT] checkAuth completed');
-    
-    // Начальная проверка соединения и регулярная проверка каждые 5 секунд
-    (async () => {
-        const isOnline = await checkServerAvailability();
-        updateConnectionStatus(isOnline);
-    })();
-    
-    // Регулярная проверка соединения каждые 5 секунд
-    if (serverCheckInterval) clearInterval(serverCheckInterval);
-    serverCheckInterval = setInterval(async () => {
-        const isOnline = await checkServerAvailability();
-        updateConnectionStatus(isOnline);
-    }, 5000);
-    
-    // Также проверяем при online/offline событиях браузера
-    window.addEventListener('online', async () => {
-        console.log('[EVENT] Браузер вернулся в онлайн');
-        const isOnline = await checkServerAvailability();
-        updateConnectionStatus(isOnline);
-    });
-    
-    window.addEventListener('offline', () => {
-        console.log('[EVENT] Браузер отключился');
-        updateConnectionStatus(false);
-    });
-    
-    // Проверяем видимость страницы - когда пользователь возвращается, проверяем соединение
-    document.addEventListener('visibilitychange', async () => {
-        if (!document.hidden) {
-            console.log('[EVENT] Страница вернулась в фокус, проверяем соединение');
-            const isOnline = await checkServerAvailability();
-            updateConnectionStatus(isOnline);
-        }
-    });
+    initProfileEditing();
     
     
     document.addEventListener('keydown', (e) => {
@@ -3049,7 +3196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const name = document.getElementById('editHabitName').value.trim();
         const description = document.getElementById('editHabitDesc').value.trim();
-        const time = null;
+        const time = document.getElementById('editHabitTime').value;
         const categoryInput = document.getElementById('editHabitCategory');
         const categoryId = categoryInput.dataset.categoryId;
         
@@ -3312,6 +3459,7 @@ async function requestNotificationPermission() {
             return false;
         }
         
+        // Запрашиваем разрешение (permission === 'default')
         const permission = await Notification.requestPermission();
         
         if (permission === 'granted') {
@@ -3473,28 +3621,27 @@ const avatarEmojis = [
 
 
 function initUserProfile() {
-    // Загружаем сохраненные настройки
+    
     const stored = localStorage.getItem('userSettings');
     if (stored) {
         userSettings = { ...userSettings, ...JSON.parse(stored) };
     }
     
-    // Теперь обновляем UI с загруженными настройками
+    
     updateProfileUI();
     applyUserSettings();
 }
 
+
 function updateProfileUI() {
     if (currentUser) {
-        // Обновляем аватар ДО всего остального
+        
         updateAvatarUI();
         
-        // Остальное...
+        
         document.getElementById('userName').textContent = currentUser.username;
         document.getElementById('profileName').textContent = currentUser.username;
         document.getElementById('profileEmail').textContent = currentUser.email;
-        
-        // ...rest of the function
         
         
         updateProfileDisplay();
