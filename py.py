@@ -16,7 +16,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def load_config():
     defaults = {
-        "api": {"port": 5001, "host": "127.0.0.1", "debug": True},
+        "api": {"port": 5001, "host": "0.0.0.0", "debug": True},
         "database": {"connection_string": "mongodb://localhost:27017"}
     }
     path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -872,4 +872,5 @@ if __name__ == "__main__":
     host = config["api"]["host"]
     init_db()
     print(f"API: http://{host}:{port}/api")
+
     app.run(debug=config["api"]["debug"], port=port, host=host, use_reloader=False)
