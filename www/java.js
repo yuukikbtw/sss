@@ -8,15 +8,20 @@ function getAutoApiBase() {
     }
     
     if (currentPort === '5001') {
-        return `${window.location.protocol}//${currentHost}:5001/api`;
+        return `${window.location.protocol}//${currentHost}:10000/api`;
     }
     
     if (currentPort === '8000') {
-        return `${window.location.protocol}//${currentHost}:5001/api`;
+        return `${window.location.protocol}//${currentHost}:10000/api`;
     }
     
-    return 'http://localhost:5001/api';
+    if (currentPort === '10000') {
+        return `${window.location.protocol}//${currentHost}:10000/api`;
+    }
+    
+    return 'http://localhost:10000/api';
 }
+
 
 let API_BASE = getAutoApiBase();
 let isServerOnline = false;
@@ -25,8 +30,8 @@ let isOfflineMode = false;
 
 const POSSIBLE_API_URLS = [
     getAutoApiBase(),
-    'http://localhost:5001/api',
-    'http://127.0.0.1:5001/api',
+    'http://localhost:10000/api',
+    'http://127.0.0.1:10000/api',
     'https://sss-vcq4.onrender.com/api'
 ];
 
@@ -54,6 +59,54 @@ function loadOfflineHabits() {
 function saveOfflineHabits() {
     localStorage.setItem('offlineHabits', JSON.stringify(habits));
     console.log('💾 [OFFLINE] Привычки сохранены в localStorage');
+}
+
+// Инициализация offline базы данных
+function initOfflineDatabase() {
+    // Создаём demo пользователя если его нет
+    if (!localStorage.getItem('currentUser')) {
+        const demoUser = {
+            id: 'demo_' + Date.now(),
+            username: '📱 Demo User',
+            email: 'demo@offline.local',
+            createdAt: new Date().toISOString()
+        };
+        localStorage.setItem('currentUser', JSON.stringify(demoUser));
+        localStorage.setItem('offlineModeUser', 'true');
+        currentUser = demoUser;
+        console.log('✅ [OFFLINE] Demo пользователь создан');
+    }
+    
+    // Создаём пустой массив привычек если его нет
+    if (!localStorage.getItem('offlineHabits')) {
+        const defaultHabits = [
+            {
+                id: 'demo_habit_1',
+                name: '🏃‍♂️ ' + t('sport'),
+                description: 'Упражнения',
+                category: 'sport',
+                difficulty: 'medium',
+                createdAt: new Date().toISOString(),
+                completedDates: [],
+                reminder: { type: 'none' }
+            },
+            {
+                id: 'demo_habit_2',
+                name: '📚 ' + t('study'),
+                description: 'Учёба',
+                category: 'study',
+                difficulty: 'medium',
+                createdAt: new Date().toISOString(),
+                completedDates: [],
+                reminder: { type: 'none' }
+            }
+        ];
+        localStorage.setItem('offlineHabits', JSON.stringify(defaultHabits));
+        habits = defaultHabits;
+        console.log('✅ [OFFLINE] Demo привычки созданы');
+    } else {
+        habits = JSON.parse(localStorage.getItem('offlineHabits'));
+    }
 }
 
 // Сохранение прогресса пользователя
@@ -305,7 +358,8 @@ let userProgress = {
     earlyBirdCount: 0,
     nightOwlCount: 0,
     createdHabits: 0,
-    xpClaimedDays: {}
+    xpClaimedDays: {},
+    stepRewardsByDate: {}  // { "Mon Jan 01 2026": true, ... } - ключ це дата, значення - дата отримання винаг
 };
 
 
@@ -614,7 +668,28 @@ function showInfo(msg) {
 }
 
 function formatDate(date) {
-    return date.toISOString().split('T')[0];
+    // Повертає дату у форматі YYYY-MM-DD на основі локального часу браузера
+    // БЕЗ UTC конвертації - щоб правильно порівнювати дати
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function getTodayString() {
+    // Повертає строку "сьогодні" у форматі YYYY-MM-DD для локального часу
+    return formatDate(new Date());
+}
+
+/**
+ * Валідує формат часу ГГ:ХХ
+ * @param {string} timeStr - час у форматі ГГ:ХХ
+ * @returns {boolean} - true якщо валідний
+ */
+function isValidTime(timeStr) {
+    if (!timeStr || typeof timeStr !== 'string') return false;
+    const match = timeStr.match(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/);
+    return match !== null;
 }
 
 function getWeekDays() {
@@ -862,13 +937,14 @@ function selectReminderType(type, element) {
     document.getElementById('reminderType').dataset.value = type;
     
     
-    const specificSettings = document.getElementById('specificTimeSettings');
+    const timePickerSection = document.getElementById('timePickerSection');
     const intervalSettings = document.getElementById('intervalSettings');
     
-    specificSettings.style.display = type === 'specific' ? 'block' : 'none';
+    // Show time picker for both specific and interval types
+    timePickerSection.style.display = (type === 'specific' || type === 'interval') ? 'block' : 'none';
     intervalSettings.style.display = type === 'interval' ? 'block' : 'none';
     
-    // Если выбран тип напоминания (не "none"), запрашиваем разрешение на уведомления
+    // Якщо обраний тип нагадування (не "none"), запитуємо дозвіл на сповіщення
     if (type !== 'none') {
         setTimeout(async () => {
             const hasPermission = await requestNotificationPermission();
@@ -1214,13 +1290,13 @@ function selectEditReminderType(type, element) {
     document.getElementById('editReminderType').value = titles[type];
     document.getElementById('editReminderType').dataset.value = type;
     
-    const specificSettings = document.getElementById('editSpecificTimeSettings');
-    const intervalSettings = document.getElementById('editIntervalSettings');
+    const editTimePickerSection = document.getElementById('editTimePickerSection');
+    const editIntervalSettings = document.getElementById('editIntervalSettings');
     
-    specificSettings.style.display = type === 'specific' ? 'block' : 'none';
-    intervalSettings.style.display = type === 'interval' ? 'block' : 'none';
+    editTimePickerSection.style.display = type === 'specific' ? 'block' : 'none';
+    editIntervalSettings.style.display = type === 'interval' ? 'block' : 'none';
     
-    // Если выбран тип напоминания (не "none"), запрашиваем разрешение на уведомления
+    // Якщо обраний тип нагадування (не "none"), запитуємо дозвіл на сповіщення
     if (type !== 'none') {
         setTimeout(async () => {
             const hasPermission = await requestNotificationPermission();
@@ -1513,6 +1589,7 @@ async function login(email, password) {
             closeModal('authModal');
             showSuccess(data.message);
             fetchHabits();
+            await loadUserProgress();
         } else {
             // Если сервер не отвечает - переходим в offline режим
             if (response.status === 0 || response.status >= 500) {
@@ -1851,6 +1928,15 @@ async function fetchHabits() {
 
 async function createHabit(data) {
     try {
+        console.group('[HABIT:CREATE] 🎯 Початок створення звички');
+        console.log('📤 Payload передається на сервер:', {
+            name: data.name,
+            description: data.description,
+            category: data.category,
+            reminder: data.reminder
+        });
+        console.groupEnd();
+        
         // В режиме offline - добавляем привычку в localStorage
         if (isOfflineMode) {
             console.log('📝 [OFFLINE] Добавляем привычку в localStorage');
@@ -1911,9 +1997,26 @@ async function createHabit(data) {
             body: JSON.stringify(data)
         });
         
+        console.log(`[HABIT:CREATE] Response status: ${response.status}`);
+        
         if (response.ok) {
+            const newHabit = await response.json();
+            console.group('[HABIT:CREATE] ✅ Звичка успішно створена');
+            console.log('📥 Дані з сервера:', newHabit);
+            console.groupEnd();
+            
             showSuccess(t('habitAdded'));
-            await fetchHabits();
+            
+            // Оптимістичне додавання до локального списку
+            if (!habits.find(h => h.id === newHabit.id)) {
+                habits.push(newHabit);
+                console.log('[HABIT:CREATE] 📝 Додано до локального списку');
+            }
+            
+            // Фоновий refetch для синхронізації
+            fetchHabits().catch(err => {
+                console.warn('[HABIT:CREATE] ⚠️ Помилка під час refetch:', err);
+            });
             
             
             userProgress.createdHabits++;
@@ -1949,9 +2052,9 @@ async function createHabit(data) {
             }
             
             
-            const newHabit = await response.json();
             if (newHabit.reminder && newHabit.reminder.type !== 'none') {
                 setupHabitReminder(newHabit);
+                console.log('[HABIT:CREATE] 🔔 Запущено нагадування:', newHabit.reminder.type);
             }
             
             closeModal('addHabitModal');
@@ -1982,14 +2085,50 @@ async function createHabit(data) {
             
             closeAllDropdowns();
         } else {
-            const error = await response.json();
-            showError(error.error || t('createError'));
+            console.group('[HABIT:CREATE] ❌ Помилка від сервера');
+            console.log('Status:', response.status);
+            
+            let errorData = {};
+            try {
+                errorData = await response.json();
+                console.log('Response body:', errorData);
+            } catch (e) {
+                console.log('Не вдалось спарсити JSON відповідь:', response.statusText);
+                errorData = { error: response.statusText };
+            }
+            console.groupEnd();
+            
+            // Детальні повідомлення про помилки
+            let userMessage = t('createError') || 'Помилка створення звички';
+            
+            if (response.status === 400) {
+                userMessage = errorData.error || errorData.details || '❌ Невалідні дані. Перевірте форму.';
+            } else if (response.status === 401) {
+                userMessage = '❌ Ваша сесія закінчилась. Будь ласка, увійдіть заново.';
+                setTimeout(() => location.reload(), 2000);
+            } else if (response.status === 409) {
+                userMessage = errorData.error || '❌ Звичка з такою назвою вже існує.';
+            } else if (response.status >= 500) {
+                userMessage = '❌ Помилка сервера. Спробуйте пізніше.';
+            }
+            
+            showError(userMessage);
         }
     } catch (error) {
-        console.warn('⚠️ Ошибка создания привычки, пытаемся использовать offline mode:', error);
-        // Fallback на offline режим
-        enableOfflineMode();
-        await createHabit(data);
+        console.group('[HABIT:CREATE] 🔴 Критична помилка');
+        console.error('Error:', error);
+        console.log('Stack:', error.stack);
+        console.groupEnd();
+        
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            console.log('[HABIT:CREATE] Увімкнення offline режиму через помилку мережі');
+            enableOfflineMode();
+            await createHabit(data);
+        } else {
+            showError(t('networkError') || '❌ Мережева помилка. Спробуйте ще раз.');
+        }
+    }
+}
     }
 }
 
@@ -2199,6 +2338,25 @@ function renderHabits() {
     
     habitsList.innerHTML = habits.map(habit => {
         const category = categories.find(c => c.id === habit.category);
+        
+        // Визначаємо іконку для типу нагадування
+        let reminderIcon = '🔕';
+        let reminderTitle = t('noReminders');
+        if (habit.reminder) {
+            if (habit.reminder.type === 'specific' || habit.reminder.type === 'time') {
+                reminderIcon = '⏰';
+                const time = habit.reminder.time || '';
+                reminderTitle = `У певний час: ${time}`;
+            } else if (habit.reminder.type === 'interval') {
+                reminderIcon = '🔄';
+                const val = habit.reminder.interval?.value || 0;
+                const unit = habit.reminder.interval?.unit || '';
+                const unitMap = {'hour': 'год', 'day': 'дн', 'week': 'тиж', 'month': 'міс'};
+                const unitText = unitMap[unit] || unit;
+                reminderTitle = `Через інтервали: кожні ${val} ${unitText}`;
+            }
+        }
+        
         return `
             <div class="habit-card" data-id="${habit.id}">
                 <div class="habit-header">
@@ -2212,12 +2370,10 @@ function renderHabits() {
                                     <span>${category.name}</span>
                                 </div>
                             ` : ''}
-                            ${habit.time ? `
-                                <div class="habit-time">
-                                    <span>🕐</span>
-                                    <span>${habit.time}</span>
-                                </div>
-                            ` : ''}
+                            <div class="habit-reminder" title="${reminderTitle}">
+                                <span>${reminderIcon}</span>
+                                <span>${reminderTitle}</span>
+                            </div>
                         </div>
                     </div>
                     <div class="habit-actions">
@@ -2240,12 +2396,10 @@ function renderHabits() {
                         ).join('')}
                         ${getWeekDays().map(date => {
                             const dateStr = formatDate(date);
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            date.setHours(0, 0, 0, 0);
-                            const isToday = dateStr === formatDate(new Date());
-                            const isFuture = date > today;
-                            const isPast = date < today;
+                            const todayStr = getTodayString();
+                            const isToday = dateStr === todayStr;
+                            const isFuture = dateStr > todayStr;
+                            const isPast = dateStr < todayStr;
                             console.log(`Рендеринг ячейки для привычки ${habit.id} на дату ${dateStr}`);
                             return `
                                 <div class="day-cell ${isToday ? 'today' : ''} ${isFuture ? 'future disabled' : ''} ${isPast ? 'past disabled' : ''}" 
@@ -2283,14 +2437,11 @@ async function updateWeekCells() {
                     stats.entries.filter(e => e.status === false || e.status === 0).map(e => e.date)
                 );
                 
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                const todayStr = getTodayString();
                 
                 weekDays.forEach(date => {
                     const dateStr = formatDate(date);
-                    const cellDate = new Date(date);
-                    cellDate.setHours(0, 0, 0, 0);
-                    const isFuture = cellDate > today;
+                    const isFuture = dateStr > todayStr;
                     
                     const cell = document.querySelector(`[data-habit-id="${habit.id}"][data-date="${dateStr}"]`);
                     if (cell) {
@@ -2315,18 +2466,16 @@ async function updateWeekCells() {
 async function toggleDay(habitId, date) {
     console.log(`Переключение состояния привычки ${habitId} на дату ${date}`);
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const selectedDate = new Date(date);
-    selectedDate.setHours(0, 0, 0, 0);
+    const todayStr = getTodayString();
     
-    if (selectedDate > today) {
+    // Порівнюємо дати у форматі YYYY-MM-DD (строки)
+    if (date > todayStr) {
         showError(t('cannotMarkFuture') || 'Не можна відмічати майбутні дати');
         return;
     }
     
-    if (selectedDate < today) {
-        showError(t('cannotMarkPast') || 'Не можна відмічати минулі дати');
+    if (date < todayStr) {
+        showError(t('cannotMarkPast') || 'Не можна змінювати минулі дати');
         return;
     }
     
@@ -2657,18 +2806,14 @@ function renderCalendar() {
         calendarHTML += '<div class="calendar-day empty"></div>';
     }
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = formatDate(today);
+    const todayStr = getTodayString();
     
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${calendarCurrentYear}-${String(calendarCurrentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const isCompleted = calendarData[dateStr] === true;
         const isToday = dateStr === todayStr;
-        const cellDate = new Date(dateStr);
-        cellDate.setHours(0, 0, 0, 0);
-        const isFuture = cellDate > today;
-        const isPast = cellDate < today;
+        const isFuture = dateStr > todayStr;
+        const isPast = dateStr < todayStr;
         
         let classes = 'calendar-day';
         if (isCompleted) classes += ' completed';
@@ -2708,18 +2853,16 @@ function changeMonth(delta) {
 async function toggleCalendarDay(dateStr) {
     if (!selectedHabitId) return;
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const selectedDate = new Date(dateStr);
-    selectedDate.setHours(0, 0, 0, 0);
+    const todayStr = getTodayString();
     
-    if (selectedDate > today) {
+    // Порівнюємо дати у форматі YYYY-MM-DD (строки)
+    if (dateStr > todayStr) {
         showError(t('cannotMarkFuture') || 'Не можна відмічати майбутні дати');
         return;
     }
     
-    if (selectedDate < today) {
-        showError(t('cannotMarkPast') || 'Не можна відмічати минулі дати');
+    if (dateStr < todayStr) {
+        showError(t('cannotMarkPast') || 'Не можна змінювати минулі дати');
         return;
     }
     
@@ -2770,18 +2913,6 @@ function editHabit(habitId) {
     document.getElementById('editHabitDesc').value = habit.description || '';
     
     
-    if (habit.time) {
-        document.getElementById('editHabitTime').value = habit.time;
-        const [hours, minutes] = habit.time.split(':');
-        editSelectedHour = parseInt(hours);
-        editSelectedMinute = parseInt(minutes);
-    } else {
-        document.getElementById('editHabitTime').value = '';
-        editSelectedHour = null;
-        editSelectedMinute = null;
-    }
-    
-    
     const categoryInput = document.getElementById('editHabitCategory');
     if (habit.category) {
         const category = categories.find(c => c.id === habit.category);
@@ -2796,20 +2927,21 @@ function editHabit(habitId) {
     
     
     const reminderTypeInput = document.getElementById('editReminderType');
-    const specificSettings = document.getElementById('editSpecificTimeSettings');
+    const timePickerSection = document.getElementById('editTimePickerSection');
     const intervalSettings = document.getElementById('editIntervalSettings');
     
     if (habit.reminder && habit.reminder.type !== 'none') {
         const titles = {
-            'specific': '⏰ В определенное время',
-            'interval': '🔄 Через интервалы'
+            'specific': '⏰ У певний час',
+            'time': '⏰ У певний час',
+            'interval': '🔄 Через інтервали'
         };
         
-        reminderTypeInput.value = titles[habit.reminder.type];
+        reminderTypeInput.value = titles[habit.reminder.type] || '🔕 Без нагадувань';
         reminderTypeInput.dataset.value = habit.reminder.type;
         
-        if (habit.reminder.type === 'specific') {
-            specificSettings.style.display = 'block';
+        if (habit.reminder.type === 'specific' || habit.reminder.type === 'time') {
+            timePickerSection.style.display = 'block';
             intervalSettings.style.display = 'none';
             
             if (habit.reminder.time) {
@@ -2819,25 +2951,36 @@ function editHabit(habitId) {
                 editReminderSelectedMinute = parseInt(minutes);
             }
         } else if (habit.reminder.type === 'interval') {
-            specificSettings.style.display = 'none';
+            timePickerSection.style.display = 'none';
             intervalSettings.style.display = 'block';
             
             if (habit.reminder.interval) {
-                document.getElementById('editIntervalValue').value = habit.reminder.interval.value;
+                document.getElementById('editIntervalValue').value = habit.reminder.interval.value || 1;
                 const units = {
-                    'minutes': t('minute'),
-                    'hours': t('hour'),
-                    'days': t('day')
+                    'minute': t('minute') || 'хвилин',
+                    'minutes': t('minute') || 'хвилин',
+                    'hour': t('hour') || 'годин',
+                    'hours': t('hour') || 'годин',
+                    'day': t('day') || 'днів',
+                    'days': t('day') || 'днів'
                 };
                 const unitInput = document.getElementById('editIntervalUnit');
-                unitInput.value = units[habit.reminder.interval.unit];
+                unitInput.value = units[habit.reminder.interval.unit] || '';
                 unitInput.dataset.value = habit.reminder.interval.unit;
+                
+                // Заповнюємо час (стартова точка для інтервалів)
+                if (habit.reminder.interval.startTime) {
+                    document.getElementById('editReminderTime').value = habit.reminder.interval.startTime;
+                    const [hours, minutes] = habit.reminder.interval.startTime.split(':');
+                    editReminderSelectedHour = parseInt(hours);
+                    editReminderSelectedMinute = parseInt(minutes);
+                }
             }
         }
     } else {
         reminderTypeInput.value = `🔕 ${t('noReminders')}`;
         reminderTypeInput.dataset.value = 'none';
-        specificSettings.style.display = 'none';
+        timePickerSection.style.display = 'none';
         intervalSettings.style.display = 'none';
     }
     
@@ -3139,6 +3282,11 @@ function updateStepCounterUI() {
     if (stepsRemainingContainer) {
         stepsRemainingContainer.style.display = isCompleted ? 'none' : 'block';
     }
+    
+    // Перевіряємо винаграду за кроки
+    if (isCompleted) {
+        checkAndRewardSteps();
+    }
 }
 
 function setStepGoal(goal) {
@@ -3148,8 +3296,90 @@ function setStepGoal(goal) {
         saveStepCounter();
         updateStepCounterUI();
         showSuccess(`${t('stepsGoal')}: ${parsedGoal.toLocaleString()}`);
+        
+        // Оновлюємо мету на сервері (якщо він доступний)
+        updateStepGoalOnServer(parsedGoal);
     } else {
         showError(t('invalidGoal'));
+    }
+}
+
+async function updateStepGoalOnServer(newGoal) {
+    if (isOfflineMode) return;
+    
+    try {
+        const response = await apiFetch(`${API_BASE}/user/step-goal`, {
+            method: 'PUT',
+            body: JSON.stringify({ stepGoal: newGoal })
+        });
+        
+        if (response.ok) {
+            console.log(`[STEPS] ✅ Мета кроків оновлена на сервері: ${newGoal}`);
+        } else {
+            console.warn(`[STEPS] ⚠️ Помилка оновлення мети на сервері: ${response.status}`);
+        }
+    } catch (error) {
+        console.warn(`[STEPS] ⚠️ Помилка оновлення мети на сервері:`, error);
+    }
+}
+
+async function checkAndRewardSteps() {
+    /**
+     * Перевіряє чи досяг користувач цілі кроків і запитує винаграду на сервері
+     */
+    if (isOfflineMode) {
+        console.log('[STEPS:REWARD] 📱 Offline режим -логіка винагород вимкнена');
+        return;
+    }
+    
+    if (!currentUser) {
+        console.log('[STEPS:REWARD] ⏳ Користувач не залогінений');
+        return;
+    }
+    
+    const todayKey = getStepTodayKey();  // "Mon Jan 01 2026"
+    
+    // Перевіряємо чи вже запитували винаграду сьогодні
+    if (userProgress.stepRewardsByDate && userProgress.stepRewardsByDate[todayKey]) {
+        console.log('[STEPS:REWARD] ⏭️  Винагорода вже видана сьогодні');
+        return;
+    }
+    
+    try {
+        console.group('[STEPS:REWARD] 🎯 Перевіряємо винаграду за кроки');
+        console.log(`Steps: ${stepCounter.steps} / Goal: ${stepCounter.goal}`);
+        console.groupEnd();
+        
+        const response = await apiFetch(`${API_BASE}/user/steps/reward`, {
+            method: 'POST',
+            body: JSON.stringify({ stepsToday: stepCounter.steps })
+        });
+        
+        const result = await response.json();
+        
+        if (result.rewarded) {
+            console.log(`[STEPS:REWARD] ✅ ${result.message}`);
+            
+            // Нараховуємо XP локально
+            awardXP(result.xpAwarded);
+            
+            // Оновлюємо список врахованих днів
+            if (!userProgress.stepRewardsByDate) {
+                userProgress.stepRewardsByDate = {};
+            }
+            userProgress.stepRewardsByDate[todayKey] = true;
+            saveUserProgress();
+            
+            // Показуємо користувачу
+            showSuccess(`🎉 ${result.message}`);
+            setTimeout(() => {
+                showXPNotification(result.xpAwarded);
+            }, 500);
+        } else {
+            console.log(`[STEPS:REWARD] ℹ️  ${result.message}`);
+        }
+    } catch (error) {
+        console.warn('[STEPS:REWARD] ⚠️ Помилка перевірки винагород:', error);
     }
 }
 
@@ -3310,7 +3540,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const name = document.getElementById('habitName').value.trim();
         const description = document.getElementById('habitDesc').value.trim();
-        const time = document.getElementById('habitTime').value;
         const categoryInput = document.getElementById('habitCategory');
         const categoryId = categoryInput.dataset.categoryId;
         
@@ -3319,9 +3548,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const reminderType = reminderTypeInput.dataset.value || 'none';
         let reminder = { type: 'none' };
         
+        if (!name) {
+            showError(t('enterHabitName'));
+            return;
+        }
+        
         if (reminderType === 'specific') {
             const reminderTime = document.getElementById('reminderTime').value;
             if (reminderTime) {
+                // Валідація часу
+                if (!isValidTime(reminderTime)) {
+                    showError('❌ Невалідний формат часу. Використовуйте ГГ:ХХ');
+                    return;
+                }
                 reminder = {
                     type: 'specific',
                     time: reminderTime
@@ -3331,30 +3570,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const intervalValue = parseInt(document.getElementById('intervalValue').value);
             const intervalUnitInput = document.getElementById('intervalUnit');
             const intervalUnit = intervalUnitInput.dataset.value;
-            if (intervalValue && intervalUnit) {
-                reminder = {
-                    type: 'interval',
-                    interval: {
-                        value: intervalValue,
-                        unit: intervalUnit
-                    }
-                };
+            const reminderTime = document.getElementById('intervalReminderTime').value;
+            
+            // Валідація інтервалу
+            if (!intervalValue || intervalValue <= 0) {
+                showError('❌ Інтервал має бути більше 0');
+                return;
             }
-        }
-        
-        if (!name) {
-            showError(t('enterHabitName'));
-            return;
+            if (!intervalUnit) {
+                showError('❌ Виберіть одиницю часу');
+                return;
+            }
+            
+            reminder = {
+                type: 'interval',
+                interval: {
+                    value: intervalValue,
+                    unit: intervalUnit,
+                    startTime: reminderTime || null
+                }
+            };
         }
         
         const habitData = {
             name,
             description,
-            time: time || null,
             category: categoryId || null,
             reminder: reminder
         };
         
+        console.log('[FORM:ADD] Передаю дані звички:', habitData);
         await createHabit(habitData);
     });
 
@@ -3390,9 +3635,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const name = document.getElementById('editHabitName').value.trim();
         const description = document.getElementById('editHabitDesc').value.trim();
-        const time = document.getElementById('editHabitTime').value;
         const categoryInput = document.getElementById('editHabitCategory');
         const categoryId = categoryInput.dataset.categoryId;
+        
+        if (!name) {
+            showError(t('enterHabitName'));
+            return;
+        }
         
         
         const reminderTypeInput = document.getElementById('editReminderType');
@@ -3402,6 +3651,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (reminderType === 'specific') {
             const reminderTime = document.getElementById('editReminderTime').value;
             if (reminderTime) {
+                // Валідація часу
+                if (!isValidTime(reminderTime)) {
+                    showError('❌ Невалідний формат часу. Використовуйте ГГ:ХХ');
+                    return;
+                }
                 reminder = {
                     type: 'specific',
                     time: reminderTime
@@ -3411,30 +3665,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const intervalValue = parseInt(document.getElementById('editIntervalValue').value);
             const intervalUnitInput = document.getElementById('editIntervalUnit');
             const intervalUnit = intervalUnitInput.dataset.value;
-            if (intervalValue && intervalUnit) {
-                reminder = {
-                    type: 'interval',
-                    interval: {
-                        value: intervalValue,
-                        unit: intervalUnit
-                    }
-                };
+            const reminderTime = document.getElementById('editReminderTime').value;
+            
+            // Валідація інтервалу
+            if (!intervalValue || intervalValue <= 0) {
+                showError('❌ Інтервал має бути більше 0');
+                return;
             }
-        }
-        
-        if (!name) {
-            showError(t('enterHabitName'));
-            return;
+            if (!intervalUnit) {
+                showError('❌ Виберіть одиницю часу');
+                return;
+            }
+            
+            reminder = {
+                type: 'interval',
+                interval: {
+                    value: intervalValue,
+                    unit: intervalUnit,
+                    startTime: reminderTime || null
+                }
+            };
         }
         
         const habitData = {
             name,
             description,
-            time: time || null,
             category: categoryId || null,
             reminder: reminder
         };
         
+        console.log('[FORM:EDIT] Передаю дані оновлення:', habitData);
         await updateHabit(editingHabitId, habitData);
     });
 
@@ -3571,13 +3831,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 const cell = e.target.closest('.day-cell');
                 
-                if (cell.classList.contains('future') || cell.classList.contains('disabled')) {
+                // Якщо майбутня дата - не можна відмічати
+                if (cell.classList.contains('future')) {
                     showError(t('cannotMarkFuture') || 'Не можна відмічати майбутні дати');
                     return;
                 }
                 
+                // Якщо мінула дата - не можна змінювати
                 if (cell.classList.contains('past')) {
-                    showError(t('cannotMarkPast') || 'Не можна відмічати минулі дати');
+                    showError(t('cannotMarkPast') || 'Не можна змінювати мінулі дати');
                     return;
                 }
                 
@@ -3674,7 +3936,24 @@ async function requestNotificationPermission() {
 }
 
 function createNotification(title, body, icon = '🎯') {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    // Try Capacitor first (mobile)
+    if (window.Capacitor && window.Capacitor.Plugins?.LocalNotifications) {
+        scheduleNotificationCapacitor(title, title, body, 0).catch(e => 
+            console.warn('[NOTIF] Capacitor error:', e)
+        );
+    }
+    
+    // Fall back to web Notification API
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+        console.warn('[NOTIF] Notifications not available or not granted', {
+            hasAPI: 'Notification' in window,
+            permission: Notification?.permission,
+            capacitor: !!window.Capacitor
+        });
+        return;
+    }
+    
+    console.log('[NOTIF] Creating notification:', { title, body, icon });
     const n = new Notification(title, {
         body,
         icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMzIgNjRDNDkuNjczIDY0IDY0IDQ5LjY3MyA2NCAzMlM0OS42NzMgMCAzMiAwIDAgMTQuMzI3IDAgMzJzMTQuMzI3IDMyIDMyIDMyeiIgZmlsbD0iIzAwZDRmZiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIyNCIgZmlsbD0id2hpdGUiPvCfj68tL3RleHQ+PC9zdmc+',
@@ -3753,7 +4032,52 @@ function clearHabitReminder(habitId) {
         clearTimeout(id);
         clearInterval(id);
         activeReminders.delete(habitId);
+        const habit = habits.find(h => h.id === habitId);
+        console.log(`[REMINDER:CLEAR] ${habit?.name || habitId}`);
     }
+}
+
+async function scheduleNotificationCapacitor(habitId, title, body, delayMs = 0) {
+    if (!window.Capacitor || !window.Capacitor.Plugins?.LocalNotifications) {
+        console.log('[CAPACITOR] LocalNotifications not available');
+        return;
+    }
+    
+    try {
+        const { LocalNotifications } = window.Capacitor.Plugins;
+        const id = parseInt(habitId.replace(/\D/g, '')) || Math.floor(Math.random() * 10000);
+        
+        const schedule = {
+            notifications: [{
+                id: id,
+                title: title,
+                body: body,
+                smallIcon: 'ic_stat_app',
+                largeBody: body,
+                channelId: 'habit_reminders',
+                schedule: delayMs > 0 
+                    ? { at: new Date(Date.now() + delayMs) }
+                    : undefined
+            }]
+        };
+        
+        await LocalNotifications.schedule(schedule);
+        console.log(`[CAPACITOR:SCHEDULED] ${title} for ${habitId} (id:${id})`);
+    } catch (error) {
+        console.warn('[CAPACITOR:ERROR]', error.message);
+    }
+}
+
+// Setup Capacitor notification channel on load
+if (window.Capacitor && window.Capacitor.Plugins?.LocalNotifications) {
+    window.Capacitor.Plugins.LocalNotifications.createChannel?.({
+        id: 'habit_reminders',
+        name: 'Habit Reminders',
+        description: 'Notifications for habit reminders',
+        importance: 4,
+        sound: 'default',
+        vibration: true
+    }).catch(() => {});
 }
 
 function isHabitCompletedToday(habitId) {
@@ -3773,6 +4097,8 @@ function setupAllReminders() {
 
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
+    
+    console.log('[VISIBILITY] Page became visible - syncing reminders...');
     setupAllReminders();
     const today = getStepTodayKey();
     if (stepCounter.lastReset !== today) {
