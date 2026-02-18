@@ -184,34 +184,6 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" data-i18n="time">Час</label>
-                    <div class="time-selector">
-                        <input type="text" class="form-input" id="habitTime" data-i18n-placeholder="selectTime" placeholder="Оберіть час" readonly onclick="toggleTimeDropdown()">
-                        <div class="time-dropdown" id="timeDropdown">
-                            <div class="time-picker">
-                                <div class="time-column">
-                                    <div class="time-label" data-i18n="hours">Година</div>
-                                    <div class="time-values" id="hourValues"></div>
-                                </div>
-                                <div class="time-separator">:</div>
-                                <div class="time-column">
-                                    <div class="time-label" data-i18n="minutes">Хвилини</div>
-                                    <div class="time-values" id="minuteValues"></div>
-                                </div>
-                            </div>
-                            <div class="time-actions">
-                                <button type="button" class="btn btn-secondary" onclick="clearTime()">
-                                    <span data-i18n="clear">Очистити</span>
-                                </button>
-                                <button type="button" class="btn" onclick="confirmTime()">
-                                    <span data-i18n="done">Готово</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
                     <label class="form-label" data-i18n="reminder">Нагадування</label>
                     <div class="reminder-selector">
                         <input type="text" class="form-input" id="reminderType" data-i18n-placeholder="selectReminderType" placeholder="Оберіть тип нагадування" readonly onclick="toggleReminderDropdown()">
@@ -283,6 +255,30 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="reminder-time-selector">
+                                <input type="text" class="form-input" id="intervalReminderTime" data-i18n-placeholder="selectReminderTime" placeholder="Оберіть час нагадування" readonly onclick="toggleIntervalReminderTimeDropdown()">
+                                <div class="time-dropdown" id="intervalReminderTimeDropdown">
+                                    <div class="time-picker">
+                                        <div class="time-column">
+                                            <div class="time-label" data-i18n="hours">Година</div>
+                                            <div class="time-values" id="intervalReminderHourValues"></div>
+                                        </div>
+                                        <div class="time-separator">:</div>
+                                        <div class="time-column">
+                                            <div class="time-label" data-i18n="minutes">Хвилини</div>
+                                            <div class="time-values" id="intervalReminderMinuteValues"></div>
+                                        </div>
+                                    </div>
+                                    <div class="time-actions">
+                                        <button type="button" class="btn btn-secondary" onclick="clearIntervalReminderTime()">
+                                            <span data-i18n="clear">Очистити</span>
+                                        </button>
+                                        <button type="button" class="btn" onclick="confirmIntervalReminderTime()">
+                                            <span data-i18n="done">Готово</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -327,35 +323,7 @@
                     <label class="form-label" data-i18n="description">Опис</label>
                     <textarea class="form-textarea" id="editHabitDesc" data-i18n-placeholder="descriptionPlaceholder" placeholder="Короткий опис (необов'язково)"></textarea>
                 </div>
-                
-                <div class="form-group">
-                    <label class="form-label" data-i18n="time">Час</label>
-                    <div class="time-selector">
-                        <input type="text" class="form-input" id="editHabitTime" data-i18n-placeholder="selectTime" placeholder="Оберіть час" readonly onclick="toggleEditTimeDropdown()">
-                        <div class="time-dropdown" id="editTimeDropdown">
-                            <div class="time-picker">
-                                <div class="time-column">
-                                    <div class="time-label" data-i18n="hours">Година</div>
-                                    <div class="time-values" id="editHourValues"></div>
-                                </div>
-                                <div class="time-separator">:</div>
-                                <div class="time-column">
-                                    <div class="time-label" data-i18n="minutes">Хвилини</div>
-                                    <div class="time-values" id="editMinuteValues"></div>
-                                </div>
-                            </div>
-                            <div class="time-actions">
-                                <button type="button" class="btn btn-secondary" onclick="clearEditTime()">
-                                    <span data-i18n="clear">Очистити</span>
-                                </button>
-                                <button type="button" class="btn" onclick="confirmEditTime()">
-                                    <span data-i18n="done">Готово</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
+
                 <div class="form-group">
                     <label class="form-label" data-i18n="reminder">Нагадування</label>
                     <div class="reminder-selector">
@@ -384,33 +352,6 @@
                             </div>
                         </div>
                         
-                        <div class="reminder-settings" id="editSpecificTimeSettings" style="display: none;">
-                            <div class="reminder-time-selector">
-                                <input type="text" class="form-input" id="editReminderTime" data-i18n-placeholder="selectReminderTime" placeholder="Оберіть час нагадування" readonly onclick="toggleEditReminderTimeDropdown()">
-                                <div class="time-dropdown" id="editReminderTimeDropdown">
-                                    <div class="time-picker">
-                                        <div class="time-column">
-                                            <div class="time-label" data-i18n="hours">Година</div>
-                                            <div class="time-values" id="editReminderHourValues"></div>
-                                        </div>
-                                        <div class="time-separator">:</div>
-                                        <div class="time-column">
-                                            <div class="time-label" data-i18n="minutes">Хвилини</div>
-                                            <div class="time-values" id="editReminderMinuteValues"></div>
-                                        </div>
-                                    </div>
-                                    <div class="time-actions">
-                                        <button type="button" class="btn btn-secondary" onclick="clearEditReminderTime()">
-                                            <span data-i18n="clear">Очистити</span>
-                                        </button>
-                                        <button type="button" class="btn" onclick="confirmEditReminderTime()">
-                                            <span data-i18n="done">Готово</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
                         <div class="reminder-settings" id="editIntervalSettings" style="display: none;">
                             <div class="interval-selector">
                                 <div class="interval-input-group">
@@ -432,6 +373,32 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Universal time picker for edit form -->
+                        <div class="reminder-time-selector" id="editTimePickerSection" style="display: none;">
+                            <input type="text" class="form-input" id="editReminderTime" data-i18n-placeholder="selectReminderTime" placeholder="Оберіть час нагадування" readonly onclick="toggleEditReminderTimeDropdown()">
+                            <div class="time-dropdown" id="editReminderTimeDropdown">
+                                <div class="time-picker">
+                                    <div class="time-column">
+                                        <div class="time-label" data-i18n="hours">Година</div>
+                                        <div class="time-values" id="editReminderHourValues"></div>
+                                    </div>
+                                    <div class="time-separator">:</div>
+                                    <div class="time-column">
+                                        <div class="time-label" data-i18n="minutes">Хвилини</div>
+                                        <div class="time-values" id="editReminderMinuteValues"></div>
+                                    </div>
+                                </div>
+                                <div class="time-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="clearEditReminderTime()">
+                                        <span data-i18n="clear">Очистити</span>
+                                    </button>
+                                    <button type="button" class="btn" onclick="confirmEditReminderTime()">
+                                        <span data-i18n="done">Готово</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>

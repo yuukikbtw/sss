@@ -310,8 +310,8 @@ self.addEventListener('notificationclick', (event) => {
       clients.openWindow('/?action=complete')
     );
   } else if (event.action === 'later') {
-    // Отложить напоминание
-    console.log('⏰ Напоминание отложено');
+    // Отмістити нагадування
+    console.log('⏰ Нагадування відкладене');
   } else {
     // Просто открыть приложение
     event.waitUntil(

@@ -100,7 +100,7 @@ const translations = {
         notificationsEnabled: '✅ Сповіщення ввімкнено!',
         notificationsBlocked: '❌ Сповіщення заблоковані у налаштуваннях браузера',
         notificationsDenied: '❌ Доступ до сповіщень відхилено',
-        enableNotificationsForReminders: 'ℹ️ Для роботи напоминаний потрібно увімкнути сповіщення',
+        enableNotificationsForReminders: 'ℹ️ Для роботи нагадувань потрібно увімкнути сповіщення',
         
         
         anytime: 'Будь-коли',
@@ -455,7 +455,7 @@ const translations = {
         enterStepGoal: 'Введіть ціль кроків',
         invalidGoal: 'Невірне значення цілі',
         cannotMarkFuture: 'Не можна відмічати майбутні дати',
-        cannotMarkPast: 'Не можна відмічати минулі дати. Тільки сьогодні!',
+        cannotMarkPast: 'Не можна змінювати минулі дати',
         remaining: 'Залишилось:',
         goalCompleted: '🎉 Ціль досягнута!',
         defaultGoal: 'За замовчуванням: 10,000 кроків',
@@ -471,6 +471,16 @@ const translations = {
         newBadge: 'Новий значок!',
         totalXP: 'Всього XP',
         nextLevel: 'До наступного рівня',
+        
+        // Інтервали нагадувань
+        intervals: 'Інтервали',
+        interval: 'Інтервал',
+        everyHour: 'Кожну годину',
+        everyDay: 'Кожного дня',
+        everyMinutes: 'Кожні хвилини',
+        selectInterval: 'Оберіть інтервал',
+        intervalValue: 'Значення інтервалу',
+        intervalUnit: 'Одиниця інтервалу',
     },
     
     en: {
@@ -944,6 +954,16 @@ const translations = {
         newBadge: 'New Badge!',
         totalXP: 'Total XP',
         nextLevel: 'To Next Level',
+        
+        // Intervals (нагадування через інтервали)
+        intervals: 'Intervals',
+        interval: 'Interval',
+        everyHour: 'Every hour',
+        everyDay: 'Every day',
+        everyMinutes: 'Every minutes',
+        selectInterval: 'Select interval',
+        intervalValue: 'Interval value',
+        intervalUnit: 'Interval unit',
     }
 };
 

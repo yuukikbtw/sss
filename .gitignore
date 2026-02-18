@@ -21,6 +21,7 @@ habits.db
 .env
 .env.local
 .env.production
+config.json
 node_modules/
 npm-debug.log*
 logs/

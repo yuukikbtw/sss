@@ -42,25 +42,47 @@ users_collection = db['users']
 
 
 def init_db():
-    try:
-        client.admin.command('ping')
+    max_retries = 3
+    retry_count = 0
+    
+    while retry_count < max_retries:
         try:
-            entries_collection.create_index([("habit_id", 1), ("date", 1)], unique=True)
-            habits_collection.create_index([("is_active", 1)])
-            habits_collection.create_index([("user_id", 1)])
-            users_collection.create_index([("email", 1)], unique=True)
-            users_collection.create_index([("username", 1)], unique=True)
-        except Exception:
-            pass
-    except Exception as e:
-        print(f"MongoDB: {e}")
+            print(f"[DB] Подключение к MongoDB (попытка {retry_count + 1}/{max_retries})...")
+            client.admin.command('ping')
+            print("[DB] ✓ MongoDB подключен успешно")
+            
+            try:
+                print("[DB] Создание индексов...")
+                entries_collection.create_index([("habit_id", 1), ("date", 1)], unique=True)
+                habits_collection.create_index([("is_active", 1)])
+                habits_collection.create_index([("user_id", 1)])
+                users_collection.create_index([("email", 1)], unique=True)
+                users_collection.create_index([("username", 1)], unique=True)
+                print("[DB] ✓ Индексы созданы")
+            except Exception as e:
+                print(f"[DB] ⚠ Ошибка при создании индексов: {e}")
+            
+            return  # Успешное подключение
+            
+        except Exception as e:
+            retry_count += 1
+            print(f"[DB] ✗ Ошибка подключения: {e}")
+            if retry_count < max_retries:
+                print(f"[DB] Ожидание 2 секунды перед повтором...")
+                time.sleep(2)
+            else:
+                print(f"[DB] ✗ КРИТИЧЕСКИ: Не удалось подключиться к MongoDB после {max_retries} попыток")
+                print(f"[DB] URI: {uri[:50]}..." if uri else "[DB] URI не установлен")
+                print("[DB] Сервер будет работать, но все операции с БД будут падать")
 
 def create_user(username: str, email: str, password: str) -> Dict:
     user_doc = {
         "username": username.strip(),
         "email": email.strip().lower(),
         "password_hash": generate_password_hash(password),
-        "created_at": date.today().isoformat()
+        "created_at": date.today().isoformat(),
+        "userStepGoal": 10000,  # Дефолтна ціль кроків
+        "stepRewardsByDate": {}  # { "2026-01-18": true, ... }
     }
 
     try:
@@ -69,7 +91,8 @@ def create_user(username: str, email: str, password: str) -> Dict:
             "id": str(result.inserted_id),
             "username": user_doc["username"],
             "email": user_doc["email"],
-            "created_at": user_doc["created_at"]
+            "created_at": user_doc["created_at"],
+            "userStepGoal": user_doc["userStepGoal"]
         }
     except Exception as e:
         error_msg = str(e).lower()
@@ -110,6 +133,74 @@ def get_user_by_id(user_id: str) -> Optional[Dict]:
         return user
     except Exception:
         return None
+
+def update_user_step_goal(user_id: str, step_goal: int) -> bool:
+    """Оновлює цільову кількість кроків для користувача"""
+    try:
+        result = users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"userStepGoal": max(1000, step_goal)}}  # Мінімум 1000 кроків
+        )
+        return result.matched_count > 0
+    except Exception as e:
+        print(f"[STEPS] ❌ Помилка оновлення цілі кроків: {e}")
+        return False
+
+def check_and_reward_daily_steps(user_id: str, steps_today: int) -> Dict:
+    """
+    Перевіряє чи досяг користувач цілі кроків сьогодні та видає винаграду
+    Повертає: {"rewarded": bool, "xpAwarded": int, "message": str}
+    """
+    today_str = date.today().isoformat()  # "2026-01-18"
+    
+    try:
+        user = users_collection.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            return {"rewarded": False, "xpAwarded": 0, "message": "User not found"}
+        
+        # Отримуємо цільову кількість кроків, дефолт 10000
+        step_goal = user.get("userStepGoal", 10000)
+        step_rewards = user.get("stepRewardsByDate", {})
+        
+        print(f"[STEPS:REWARD] 📊 User {user_id}: steps={steps_today}, goal={step_goal}, today={today_str}")
+        
+        # Перевіряємо чи вже видана винагорода за сьогодні
+        if today_str in step_rewards and step_rewards[today_str]:
+            print(f"[STEPS:REWARD] ⏭️  Винагорода вже видана сьогодні")
+            return {"rewarded": False, "xpAwarded": 0, "message": "Винагорода вже видана сьогодні"}
+        
+        # Перевіряємо чи досяг користувач цілі
+        if steps_today >= step_goal:
+            xp_award = 20
+            new_rewards = step_rewards.copy()
+            new_rewards[today_str] = True
+            
+            # Оновлюємо в БД
+            result = users_collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"stepRewardsByDate": new_rewards}}
+            )
+            
+            if result.matched_count > 0:
+                print(f"[STEPS:REWARD] ✅ Винагорода видана: +{xp_award} XP")
+                return {
+                    "rewarded": True,
+                    "xpAwarded": xp_award,
+                    "message": f"Вітаємо! Ви досягли цілі кроків ({steps_today}/{step_goal}). +{xp_award} XP"
+                }
+        else:
+            remaining = step_goal - steps_today
+            print(f"[STEPS:REWARD] ⏳ Не досяг цілі: {steps_today}/{step_goal} (залишилося {remaining})")
+            return {
+                "rewarded": False,
+                "xpAwarded": 0,
+                "message": f"Ще {remaining} кроків до цілі ({steps_today}/{step_goal})"
+            }
+    except Exception as e:
+        print(f"[STEPS:REWARD] ❌ Помилка: {e}")
+        return {"rewarded": False, "xpAwarded": 0, "message": f"Помилка сервера: {str(e)}"}
+    
+    return {"rewarded": False, "xpAwarded": 0, "message": "Unknown error"}
 
 def create_habit(name: str, description: str, user_id: str, time: Optional[str] = None, category: Optional[str] = None, reminder: Optional[dict] = None) -> Dict:
     habit_doc = {
@@ -152,14 +243,20 @@ def list_habits(user_id: str) -> List[Dict]:
     
     return habits
 
-def update_habit(habit_id: str, name: str, description: str, user_id: str) -> Optional[Dict]:
+def update_habit(habit_id: str, name: str, description: str, user_id: str, category: Optional[str] = None, reminder: Optional[dict] = None) -> Optional[Dict]:
     try:
+        update_data = {
+            "name": name.strip(),
+            "description": description.strip()
+        }
+        if category is not None:
+            update_data["category"] = category
+        if reminder is not None:
+            update_data["reminder"] = reminder
+        
         result = habits_collection.update_one(
             {"_id": ObjectId(habit_id), "user_id": user_id, "is_active": True},
-            {"$set": {
-                "name": name.strip(),
-                "description": description.strip()
-            }}
+            {"$set": update_data}
         )
         if result.matched_count == 0:
             return None
@@ -318,12 +415,16 @@ def validate_date(s: Optional[str]) -> date:
     return parsed_date
 
 def add_habit_service(data: Dict):
+    print(f"[API:CREATE] 📥 POST /api/habits - Payload: {data}")
+    
     auth_error = require_auth()
     if auth_error:
+        print(f"[API:CREATE] ❌ Auth error: {auth_error}")
         return auth_error[0], auth_error[1]
     
     name = (data.get("name") or "").strip()
     if not name:
+        print(f"[API:CREATE] ❌ Validation error: name required")
         return {"error": "name required"}, 400
     
     desc = (data.get("description") or "").strip()
@@ -333,8 +434,13 @@ def add_habit_service(data: Dict):
     
     user_id = get_current_user_id()
     if not isinstance(user_id, str):
+        print(f"[API:CREATE] ❌ User ID error: {user_id}")
         return {"error": "unauthorized"}, 401
-    return create_habit(name, desc, user_id, time, category, reminder), 201
+    
+    print(f"[API:CREATE] 📝 Creating habit for user {user_id}: name={name}, category={category}, reminder={reminder}")
+    result = create_habit(name, desc, user_id, time, category, reminder)
+    print(f"[API:CREATE] ✅ Habit created: {result}")
+    return result, 201
 
 def edit_habit_service(habit_id: str, data: Dict):
     auth_error = require_auth()
@@ -346,11 +452,16 @@ def edit_habit_service(habit_id: str, data: Dict):
         return {"error": "unauthorized"}, 401
     if not get_habit(habit_id, user_id):
         return {"error": "not found"}, 404
+    
     name = (data.get("name") or "").strip()
     desc = (data.get("description") or "").strip()
     if not name:
         return {"error": "name required"}, 400
-    updated = update_habit(habit_id, name, desc, user_id)
+    
+    category = data.get("category")
+    reminder = data.get("reminder", {"type": "none"})
+    
+    updated = update_habit(habit_id, name, desc, user_id, category, reminder)
     return updated, 200
 
 def remove_habit_service(habit_id: str):
@@ -419,20 +530,27 @@ def verify_token(token: str) -> Optional[str]:
     try:
         parts = token.strip().split('.')
         if len(parts) != 3:
+            print(f"[TOKEN] ❌ Invalid token format: expected 3 parts, got {len(parts)}")
             return None
         user_id, ts, sig = parts
         ts_int = int(ts)
-        if time.time() - ts_int > TOKEN_EXP_SECONDS:
+        age_seconds = time.time() - ts_int
+        if age_seconds > TOKEN_EXP_SECONDS:
+            print(f"[TOKEN] ❌ Token expired: {age_seconds}s > {TOKEN_EXP_SECONDS}s")
             return None
         msg = f"{user_id}.{ts}".encode()
         secret_bytes = app.secret_key if isinstance(app.secret_key, bytes) else str(app.secret_key).encode()
         expected = hmac.new(secret_bytes, msg, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, sig):
+            print(f"[TOKEN] ❌ Signature mismatch for user_id: {user_id}")
             return None
-        if not get_user_by_id(user_id):
+        user = get_user_by_id(user_id)
+        if not user:
+            print(f"[TOKEN] ❌ User not found: {user_id}")
             return None
+        print(f"[TOKEN] ✅ Token verified for user: {user_id}")
         return user_id
-    except Exception:
+    except Exception as e:
         return None
 
 is_production = os.environ.get("RENDER") is not None
@@ -536,15 +654,27 @@ def get_verified_user_id():
     return None
 
 def require_auth():
+    # Перевіряємо session
     if session.get('user_id'):
+        print(f"[AUTH] ✅ Session user_id: {session.get('user_id')}")
         return None
+    
+    # Перевіряємо Bearer token
     auth_header = request.headers.get('Authorization', '')
+    print(f"[AUTH] Authorization header: {auth_header[:20] if auth_header else 'NONE'}...")
+    
     if auth_header.startswith('Bearer '):
-        uid = verify_token(auth_header[7:].strip())
+        token = auth_header[7:].strip()
+        uid = verify_token(token)
         if uid:
+            print(f"[AUTH] ✅ Token verified, user_id: {uid}")
             session['user_id'] = uid
             session.modified = True
             return None
+        else:
+            print(f"[AUTH] ❌ Token verification failed")
+    
+    print(f"[AUTH] ❌ No valid auth found")
     return {"error": "Требуется авторизация"}, 401
 
 @app.route('/')
@@ -853,24 +983,113 @@ def api_user_stats():
         "current_streak": current_max_streak
     })
 
+@app.post("/api/user/steps/reward")
+def api_check_step_reward():
+    """
+    Перевіряє чи досяг користувач цілі кроків сьогодні і видає винаграду (+20 XP)
+    Очікує: { "stepsToday": 10500 }
+    Повертає: { "rewarded": true, "xpAwarded": 20, "message": "..." }
+    """
+    auth_error = require_auth()
+    if auth_error:
+        return jsonify(auth_error[0]), auth_error[1]
+    
+    user_id = get_verified_user_id()
+    if not user_id:
+        return jsonify({"error": "unauthorized"}), 401
+    
+    data = request.get_json(force=True, silent=True) or {}
+    steps_today = data.get("stepsToday", 0)
+    
+    print(f"[API:STEP_REWARD] 🎯 User {user_id} перевіряє винаграду за кроки: {steps_today}")
+    
+    result = check_and_reward_daily_steps(user_id, steps_today)
+    
+    return jsonify(result), 200
+
+@app.put("/api/user/step-goal")
+def api_update_step_goal():
+    """
+    Оновлює цільову кількість кроків для користувача
+    Очікує: { "stepGoal": 15000 }
+    Повертає: { "success": true, "stepGoal": 15000 }
+    """
+    auth_error = require_auth()
+    if auth_error:
+        return jsonify(auth_error[0]), auth_error[1]
+    
+    user_id = get_verified_user_id()
+    if not user_id:
+        return jsonify({"error": "unauthorized"}), 401
+    
+    data = request.get_json(force=True, silent=True) or {}
+    new_goal = data.get("stepGoal", 10000)
+    
+    if not isinstance(new_goal, int) or new_goal < 1000:
+        return jsonify({"error": "stepGoal повинна бути >= 1000"}), 400
+    
+    print(f"[API:STEP_GOAL] 📊 User {user_id} оновлює цільо на {new_goal}")
+    
+    if update_user_step_goal(user_id, new_goal):
+        return jsonify({"success": True, "stepGoal": new_goal}), 200
+    else:
+        return jsonify({"error": "Failed to update step goal"}), 500
+
+@app.get("/api/user/step-info")
+def api_get_step_info():
+    """
+    Отримує інформацію про кроки користувача
+    Повертає: { "userStepGoal": 10000, "stepRewardsByDate": {...} }
+    """
+    auth_error = require_auth()
+    if auth_error:
+        return jsonify(auth_error[0]), auth_error[1]
+    
+    user_id = get_verified_user_id()
+    if not user_id:
+        return jsonify({"error": "unauthorized"}), 401
+    
+    try:
+        user = users_collection.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            return jsonify({"error": "user_not_found"}), 404
+        
+        return jsonify({
+            "userStepGoal": user.get("userStepGoal", 10000),
+            "stepRewardsByDate": user.get("stepRewardsByDate", {})
+        }), 200
+    except Exception as e:
+        print(f"[API:STEP_INFO] ❌ Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @app.get("/api/health")
 def health():
     try:
         client.admin.command('ping')
         db_status = "connected"
-    except Exception:
+        db_message = "MongoDB подключен"
+    except Exception as e:
         db_status = "disconnected"
+        db_message = f"MongoDB отключен: {str(e)[:100]}"
     return jsonify({
         "status": "ok",
         "service": "Habit Tracker API",
         "version": "2.0",
-        "database": db_status
+        "database": db_status,
+        "database_message": db_message
     })
 
 if __name__ == "__main__":
+    print("\n" + "="*60)
+    print("[STARTUP] Инициализация API сервера...")
+    print("="*60)
+    print(f"[STARTUP] MongoDB URI: {uri[:60]}...")
     init_db()
+    print("="*60)
     port = int(os.environ.get("PORT", 10000))
-    print(f"API running on 0.0.0.0:{port}")
+    print(f"[STARTUP] ✓ API запущен на 0.0.0.0:{port}")
+    print(f"[STARTUP] Откройте http://localhost:{port}")
+    print("="*60 + "\n")
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
 
 
