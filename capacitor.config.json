@@ -1,0 +1,15 @@
+{
+  "appId": "com.habittracker.app",
+  "appName": "Трекер звичок",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_notify",
+      "iconColor": "#00d4ff",
+      "sound": "default"
+    }
+  }
+}
